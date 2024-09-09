@@ -37,7 +37,6 @@
 #' @export
 
 
-
 # Function to calculate the non-linear declining growth rate
 calculate_growth_rate <- function(current_volume, max_volume, start_rate, min_rate) {
   if (current_volume >= max_volume) {
