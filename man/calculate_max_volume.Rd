@@ -17,7 +17,8 @@ calculate_max_volume(hw_volume, sw_volume, maxvol = 38)
 Numeric, the maximum standing volume in cords/acre.
 }
 \description{
-This function calculates the maximum standing volume for a stand before the
+This function calculates the maximum standing volume.
+When the maximum standing volume is reached the
 SPA growth model defaults to a minimum growth rate.
 }
 \details{
@@ -74,7 +75,10 @@ print(volumes_df2)
 
 }
 \seealso{
-[SPA7i::calculate_growth_rate]
+\code{\link{calculate_growth_rate}}
+
+Other Growth and Yield Functions: 
+\code{\link{calculate_growth_rate}()}
 }
 \author{
 Ryan Smith

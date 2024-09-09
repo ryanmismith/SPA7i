@@ -30,7 +30,7 @@
 #'
 #' @family Growth and Yield Functions
 #'
-#' @seealso [SPA7i::calculate_growth_rate]
+#' @seealso \code{\link{calculate_growth_rate}}
 #'
 #' @return Numeric, the maximum standing volume in cords/acre.
 #'
