@@ -4,43 +4,67 @@
 \alias{calculate_growth_rate}
 \title{Calculate Growth Rate}
 \usage{
-calculate_growth_rate(current_volume, max_volume, start_rate, min_rate)
+calculate_growth_rate(
+  hw_volume,
+  sw_volume,
+  max_volume,
+  sw_max_rate = 0.45,
+  hw_max_rate = 0.4,
+  min_rate = 0.02,
+  maxvol = 38
+)
 }
 \arguments{
-\item{current_volume}{Numeric, the current volume of the stand (e.g., cords/acre).}
+\item{hw_volume}{Numeric, the current volume of hardwood (e.g., cords/acre).}
 
-\item{max_volume}{Numeric, the maximum allowable volume for the stand.}
+\item{sw_volume}{Numeric, the current volume of softwood (e.g., cords/acre).}
 
-\item{start_rate}{Numeric, the initial growth rate when the current volume is below 14 cords.}
+\item{sw_max_rate}{Numeric, the initial growth rate for softwood, default is 0.45.}
 
-\item{min_rate}{Numeric, the minimum growth rate when the current volume reaches or exceeds the maximum.}
+\item{hw_max_rate}{Numeric, the initial growth rate for hardwood, default is 0.40.}
+
+\item{min_rate}{Numeric, the minimum growth rate when the combined volume reaches or exceeds the maximum, default is 0.02.}
+
+\item{maxvol}{Numeric, optional argument that defines the maximum allowable volume, default is 38 cords.}
 }
 \value{
-Numeric, the calculated growth rate based on the current volume and maximum volume.
-The result is constrained between the `min_rate` and `start_rate`.
+Numeric, the calculated growth rate based on the combined HW and SW volumes and the calculated maximum volume from \code{\link{calculate_max_volume}}.
+The result is constrained between the `min_rate` and the combined `start_rate`.
 }
 \description{
-This function calculates the non-linear declining growth rate as the volume approaches its maximum.
-If the current volume is equal to or greater than the maximum volume, the minimum growth rate is returned.
-Otherwise, it uses a quadratic decline formula to interpolate the growth rate based on the current and maximum volumes.
+This function calculates the non-linear declining growth rate for a stand or matrix based on its hardwood (HW) and softwood (SW) volumes
+as it approaches its calculated `max_volume` using the \code{\link{calculate_max_volume}} function. It factors in different starting rates for HW and SW growth
+to address differences in growth behavior between them.
 }
 \details{
-The function implements a non-linear interpolation model to determine the growth rate. As the current volume
-increases towards the maximum volume, the growth rate declines quadratically. The growth rate never goes below
-the minimum rate specified.
+The function calculates the maximum allowable volume using the \code{\link{calculate_max_volume}} function, which can be influenced by the optional `maxvol` argument (defaulting to 38 cords).
+It then uses a non-linear interpolation model to determine the growth rate as the combined HW and SW volumes increase towards the calculated maximum.
+The growth rate declines quadratically and never goes below the specified minimum rate.
 
 The calculation uses a quadratic interpolation:
-\deqn{rate = start\_rate - (start\_rate - min\_rate) \times (decline\_factor^{2.2})}
+\deqn{rate = start\_rate - (start\_rate - min\_rate) \times (decline\_factor^{2})}
 where \deqn{decline\_factor = (current\_volume - 14) / (max\_volume - 14)}.
 
-The function ensures that the growth rate does not fall below the specified `min_rate`.
+The starting rate for the growth calculation is determined by the proportion of HW and SW volumes and their respective
+starting rates, with default values of 0.45 for SW and 0.40 for HW. The final growth rate is constrained between
+the minimum rate and the calculated start rate.
 }
 \examples{
-# Example 1: Current volume is less than max volume
-calculate_growth_rate(20, 50, 0.05, 0.01)
+# Example 1: Current volume is less than but approaching max volume
+hw_volumes <- c(4, 7, 12, 17, 20)
+sw_volumes <- c(4, 7, 12, 17, 20)
+sapply(1:length(hw_volumes), function(i) calculate_growth_rate(hw_volumes[i], sw_volumes[i]))
 
 # Example 2: Current volume is greater than max volume
-calculate_growth_rate(55, 50, 0.05, 0.01)
+calculate_growth_rate(24, 22)
+
+# Example 3: No Hardwood
+sw_volumes_no_hw <- c(14, 24, 34, 44)
+sapply(sw_volumes_no_hw, function(sw) calculate_growth_rate(0, sw))
+
+# Example 4: No Softwood
+hw_volumes_no_sw <- c(14, 24, 34, 44)
+sapply(hw_volumes_no_sw, function(hw) calculate_growth_rate(hw, 0))
 
 }
 \seealso{
