@@ -7,7 +7,6 @@
 calculate_growth_rate(
   hw_volume,
   sw_volume,
-  max_volume,
   sw_max_rate = 0.45,
   hw_max_rate = 0.4,
   min_rate = 0.02,
