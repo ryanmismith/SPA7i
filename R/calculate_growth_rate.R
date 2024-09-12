@@ -52,7 +52,16 @@
 
 
 # Function to calculate the non-linear declining growth rate
-calculate_growth_rate <- function(hw_volume, sw_volume, max_volume, sw_max_rate = .45, hw_max_rate = .40, min_rate = .02, maxvol = 38) {
+calculate_growth_rate <- function(hw_volume, sw_volume, sw_max_rate = .45, hw_max_rate = .40, min_rate = .02, maxvol = 38) {
+
+   if((hw_volume + sw_volume) <= 0){
+    hw_volume = .01
+    sw_volume = .01
+  } else {
+    hw_volume = hw_volume
+    sw_volume = sw_volume
+  }
+
   percent_sw <- sw_volume / (hw_volume + sw_volume)
   percent_hw <- hw_volume / (hw_volume + sw_volume)
   sw_start_rate <- sw_max_rate * percent_sw
