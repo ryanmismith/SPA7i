@@ -1,11 +1,13 @@
 Package: SPA7i
 Type: Package
 Title: SPA Analysis Functions
-Version: 0.1.3
+Version: 0.1.5
 Author: Ryan Smith
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: Growth and Yeild, AAC and NPV analysis functions.
+Maintainer: Ryan Smith <ryan.mi.smith@gmail.com>
+Description: Growth and Yield, AAC and NPV analysis functions.
 License: file LICENSE
 Encoding: UTF-8
 LazyData: true
+Imports:
+    ggplot2
 RoxygenNote: 7.3.1

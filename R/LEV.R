@@ -1,0 +1,54 @@
+#' Land Expectation Value (LEV) for Multiple Timber Rotations
+#'
+#' This function estimates the Land Expectation Value (LEV) for a stand of timber that can be harvested in perpetuity (i.e., multiple rotations).
+#' It calculates the present value of a future revenue stream from timber harvests, assuming infinite rotations, and discounts these future values back to the present.
+#'
+#' @param FutureValue Numeric. The total future value of the standing timber at the specified rotation age.
+#' @param Age Numeric. The rotation age (in years) at which the standing timber value (FutureValue) is evaluated.
+#' @param Discount Numeric. The discount rate (as a decimal, e.g., 0.05 for 5\%). This rate represents the opportunity cost of capital.
+#'
+#' @return Numeric. The Land Expectation Value (LEV), which represents the value of the timberland over infinite rotations, discounted back to the present.
+#'
+#' @details
+#' The LEV formula assumes that after each harvest, the land will be restocked (natural or planted) and future harvests will continue indefinitely.
+#' The LEV is particularly useful for forestry management when determining the long-term value of land that will continue producing timber.
+#'
+#' The formula used is known as the Faustmann Formula:
+#' \deqn{LEV = \frac{FutureValue}{(1 + Discount)^{Age} - 1}}
+#' where:
+#' \itemize{
+#'   \item FutureValue: The value of the standing timber at the end of the rotation.
+#'   \item Age: The rotation age of the timber.
+#'   \item Discount: The discount rate used to value future revenues.
+#' }
+#'
+#' @family Value Functions
+#'
+#' @references
+#' Faustmann, M. (1849). Calculation of the Value Which Forest Land and Immature Stands Possess for Forestry. Allgemeine Forst- und Jagdzeitung, 15, 441–455.
+#'
+#' @examples
+#' # Compare Present Value and Land Expectation Value
+#'
+#' # Present Value of a one-time future cash flow from a timber harvest in 40 years
+#' Flow <- 1960
+#' Year <- 40
+#' Discount <- 0.06
+#' present_value_result <- presentValue(Flow, Year, Discount)
+#' present_value_result
+#'
+#' # Land Expectation Value for infinite rotations, with the same timber value and rotation age
+#' Age <- 40
+#' FutureValue <- 1960
+#' land_expect_value_result <- landExpectVal(FutureValue, Age, Discount)
+#' land_expect_value_result
+#'
+#' # The Present Value result reflects the one-time cash flow, while the Land Expectation Value
+#' # reflects the perpetual nature of timber harvests over infinite rotations.
+#'
+#' @export
+
+landExpectVal <- function(FutureValue, Age, Discount){
+  val <- FutureValue / ((1 + Discount)^Age - 1)
+  return(val)
+}
