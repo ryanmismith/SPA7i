@@ -32,7 +32,8 @@
 #' TerminalYear <- 40
 #' FutureValue <- 1960
 #'
-#' result_exit <- monteCarloAnalysis(Flow, Occurrence, NominalRate, TerminalYear, FutureValue, Exit = TRUE)
+#' result_exit <- monteCarloAnalysis(Flow, Occurrence, NominalRate,
+#' TerminalYear, FutureValue, Exit = TRUE)
 #'
 #' # View results
 #' # result_exit$NPVs           # All simulated NPVs (list length NumSimulations)
@@ -47,7 +48,8 @@
 #'   theme_minimal()
 #'
 #' # Holding the Property (using landExpectVal)
-#' result_hold <- monteCarloAnalysis(Flow, Occurrence, NominalRate, TerminalYear, FutureValue, Exit = FALSE)
+#' result_hold <- monteCarloAnalysis(Flow, Occurrence, NominalRate,
+#' TerminalYear, FutureValue, Exit = FALSE)
 #'
 #' # View results
 #' # result_exit$NPVs           # All simulated NPVs (list length NumSimulations)
