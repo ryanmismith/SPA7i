@@ -21,13 +21,10 @@ HW_SW_Ratios <- vols |>
     TotalVolume = sum(Cords) # Total volume for the township and matrix
   )
 
-vols <- vols |>
-  mutate(
-    WoodType = mapWoodType(Product)
-  )
-
 colnames(vols) <- tolower(colnames(vols))
-vols <- vols |> rename(matrix = "lumpmatrix")
+
+vols <- vols |> rename(matrix = 'lumpmatrix')
+
 ratios <- calculateProductRatios(vols)
 
 ratios |> group_by(township, matrix) |> summarise(sum(HWratio), sum(SWratio))
@@ -109,10 +106,7 @@ results <- run_aac_for_all(vols_wide)
 str(results)
 results_combined <- bind_rows(results)
 
-acres <- vols |> select(Township, LumpMatrix, Product, Acres) |>
-  rename(matrix = 'LumpMatrix')
-colnames(acres) <- tolower(colnames(acres))
-
+acres <- vols |> select(township, matrix, acres)
 ratios <- left_join(ratios, acres)
 str(ratios)
 
@@ -171,8 +165,9 @@ product_volumes <- product_volumes |> filter(product_standing_volume > 0)
 # View the final results
 print(product_volumes)
 
-x <- product_volumes |> filter(product_harvest_volume  > 0) |> group_by(township, matrix, Year) |> summarize(sum(product_volume))
-> acres |> group_by(matrix) |> summarise(mean(acres))
+x <- product_volumes |> filter(product_harvest_volume  > 0) |>
+  group_by(township, matrix, Year) |> summarize(sum(product_volume))
+acres |> group_by(matrix) |> summarise(mean(acres))
 # A tibble: 5 × 2
 # matrix `mean(acres)`
 # <chr>          <dbl>
@@ -183,3 +178,95 @@ x <- product_volumes |> filter(product_harvest_volume  > 0) |> group_by(township
 # 5 SH3C-N          10.6
 
 test <- product_volumes |> filter(Year == 19) |>  filter(matrix == 'H1A-N')
+
+
+product_values <- c(
+  "ASl" = 120, "ASp" = 115, "BFl" = 85, "BFp" = 90,
+  "CEl" = 105, "CEp" = 110, "HVl" = 130, "HVp" = 125,
+  "HVt" = 135, "LVl" = 140, "LVp" = 100, "LVt" = 95,
+  "OSl" = 75, "OSp" = 80, "SPl" = 65, "SPp" = 60,
+  "WPl" = 50, "WPp" = 55
+)
+
+# Print product values
+print(product_values)
+
+product_values_df <- data.frame(
+  product = names(product_values),
+  product_value = as.numeric(product_values)
+)
+
+product_volumes <- product_volumes %>%
+  left_join(product_values_df, by = "product") %>%
+  mutate(
+    # Multiply product volumes by the corresponding product value
+    harvest_value = product_harvest_volume * product_value,
+    standing_value = product_standing_volume * product_value
+  )
+
+# Assuming NPVvalues is already calculated as:
+NPVvalues <- product_volumes |>
+  group_by(Year) |>
+  summarise(
+    harvest_value = sum(harvest_value),
+    standing_value = sum(standing_value)
+  )
+
+# Extract the max year and standing_value for the max year
+max_year <- max(NPVvalues$Year)
+final_standing_value <- NPVvalues %>%
+  filter(Year == max_year) %>%
+  pull(standing_value)
+
+# Create a flow dataframe with harvest_value for each year
+flow_df <- NPVvalues %>%
+  select(Year, harvest_value) %>%
+  rename(flow = harvest_value)
+
+# View the final flow dataframe
+print(flow_df)
+
+npv <- monteCarloAnalysis(Flow = flow_df$flow, Occurrence = flow_df$Year,
+                         NominalRate = .05,
+                   TerminalYear = 20, FutureValue = final_standing_value,
+                   Exit = FALSE)
+
+library(ggplot2)
+
+# Calculate the mean NPV value
+mean_NPV <- mean(npv$NPVs)
+
+# Define the 80% Confidence Intervals (assuming npv$CI_80 contains a vector of two values)
+CI_80 <- npv$CI_80
+
+# Plot with big ticks, mean line, text annotation, and confidence interval lines
+ggplot(data.frame(NPV = npv$NPVs), aes(x = NPV)) +
+  geom_histogram(bins = 30, fill = "blue", alpha = 0.7) +
+
+  # Add a vertical line for the mean NPV
+  geom_vline(aes(xintercept = mean_NPV), color = "green", linetype = "dashed", size = 1) +
+
+  # Add horizontal lines for the 80% Confidence Interval
+  geom_vline(aes(xintercept = CI_80[1]), color = "orange", linetype = "dashed", size = 1) +
+  geom_vline(aes(xintercept = CI_80[2]), color = "orange", linetype = "dashed", size = 1) +
+
+  # Add text annotation for the mean value (example: 150,000)
+  annotate("text", x = mean_NPV + 0.2 * mean_NPV, y = Inf, label = paste0("Mean: $", scales::comma(round(mean_NPV, 2))),
+           color = "black", size = 6, vjust = 1.5, fontface = "bold") +
+
+  # Customize the x-axis with big ticks
+  scale_x_continuous(breaks = seq(0, max(npv$NPVs), by = 50000), labels = scales::comma) +
+
+  # Add labels and theme
+  labs(title = "NPV Distribution - Holding the Property",
+       x = "NPV",
+       y = "Frequency",
+       caption = "Green dashed line: Mean NPV, Yellow dashed lines: 80% Confidence Intervals") +
+
+  # Add custom legend for confidence intervals
+  scale_linetype_manual(name = "Legend",
+                        values = c("dashed", "dotted"),
+                        labels = c("Mean NPV", "80% Confidence Intervals")) +
+
+  theme_minimal()
+
