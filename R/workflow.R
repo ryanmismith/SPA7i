@@ -93,7 +93,7 @@ calculate_product_volumes <- function(aac_results, ratios_df, years = 20) {
 product_volumes <- calculate_product_volumes(results_combined, ratios)
 
 # Filtering and calculating product values
-product_values <- c("ASl" = 120, "ASp" = 115, "BFl" = 185, "BFp" = 20, "CEl" = 250,
+product_values <- c("ASl" = 120, "ASp" = 115, "BFl" = 185, "BFp" = 20, "CEl" = 215,
                     "CEp" = 0, "HVl" = 300, "HVp" = 25, "HVt" = 135, "LVl" = 140,
                     "LVp" = 25, "LVt" = 95, "OSl" = 75, "OSp" = 20, "SPl" = 165,
                     "SPp" = 20, "WPl" = 150, "WPp" = 10)
@@ -143,3 +143,12 @@ ggplot(data.frame(NPV = npv$NPVs), aes(x = NPV)) +
        caption = "Green dashed line: Mean NPV, Yellow dashed lines: 80% Confidence Intervals") +
   theme_minimal()
 
+# Create a data frame with the lower and upper bounds for each confidence interval
+ci_table <- data.frame(
+  CI = c("68%", "80%", "90%"),
+  Lower_Bound = c(npv$CI_68[1], npv$CI_80[1], npv$CI_90[1]),
+  Upper_Bound = c(npv$CI_68[2], npv$CI_80[2], npv$CI_90[2])
+)
+
+# Print the table
+print(ci_table)
