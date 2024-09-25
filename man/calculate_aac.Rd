@@ -155,4 +155,9 @@ print(results_scenario_5)
 }
 \seealso{
 \code{\link{calculate_growth_rate}}, \code{\link{calculate_max_volume}}
+
+Other AAC Functions: 
+\code{\link{run_aac_for_all}()},
+\code{\link{run_aac_simulation}()}
 }
+\concept{AAC Functions}
