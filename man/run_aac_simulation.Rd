@@ -9,51 +9,69 @@ run_aac_simulation(
   sw_volume,
   aac_percentage,
   min_stocking,
-  max_harvest,
+  max_harvest = FALSE,
   min_aac = TRUE,
-  years = 15
+  years = 20
 )
 }
 \arguments{
-\item{hw_volume}{Numeric, initial hardwood volume.}
+\item{hw_volume}{Numeric, initial hardwood volume (required).}
 
-\item{sw_volume}{Numeric, initial softwood volume.}
+\item{sw_volume}{Numeric, initial softwood volume (required).}
 
-\item{aac_percentage}{Numeric, AAC percentage (default is 1).}
+\item{aac_percentage}{Numeric, AAC percentage of growth until min stocking is reached (required).}
 
-\item{min_stocking}{Numeric, minimum stocking level.}
+\item{min_stocking}{Numeric, minimum stocking level for AAC to begin or to reduce AAC to growth (required).}
 
-\item{max_harvest}{Logical, whether to apply maximum harvest.}
+\item{max_harvest}{Logical, whether to apply maximum harvest to `min_stocking` at period of first entry (default is FALSE).}
 
-\item{min_aac}{Logical, whether to apply minimum AAC (default is TRUE).}
+\item{min_aac}{Logical, whether to apply minimum AAC > growth once growth rates slow due to density (default is TRUE).}
 
-\item{years}{Integer, number of years to simulate (default is 15).}
+\item{years}{Integer, number of years to simulate (default is 20).}
 }
 \value{
-A dataframe with AAC results for each year, including HW/SW volumes,
-AAC, and growth rates.
+A dataframe with AAC results for each year, including standing HW/SW/Total volumes,
+HW/SW/Total AAC, and HW/SW/Total growth rates.Year 0 shows starting volumes before any growth or harvest.
 }
 \description{
 This function simulates the AAC growth over a specified number of years for hardwood (HW)
 and softwood (SW) volumes. It updates the volumes annually based on growth and AAC values.
+
+Default `maxvol`, `min_rate`, `sw_max_rate`, `hw_max_rate` from\code{\link{calculate_aac}} are used.
+`min_rate` of .5 cords AAC is established once growth rates are below .25 cords/year.
 }
 \examples{
-# Simulated initial volumes
-hw_volume <- 1000
-sw_volume <- 500
-aac_percentage <- 1
-min_stocking <- 12
-max_harvest <- TRUE
-years <- 15
+# Scenario 1: HW = 11, SW = 9, max_harvest = TRUE
+results_scenario_1 <- run_aac_simulation(hw_volume = 11, sw_volume = 9,
+                                         aac_percentage = 0.6, min_stocking = 12,
+                                         max_harvest = TRUE)
+print(results_scenario_1)
 
-# Example usage
-results_simulation <- run_aac_simulation(hw_volume, sw_volume, aac_percentage,
-min_stocking, max_harvest, years = years)
-print(results_simulation)
+# Scenario 2: HW = 11, SW = 9, max_harvest = FALSE
+results_scenario_2 <- run_aac_simulation(hw_volume = 11, sw_volume = 9,
+                                         aac_percentage = 0.6, min_stocking = 12,
+                                         max_harvest = FALSE)
+print(results_scenario_2)
+
+# Scenario 3 (min_aac functionality): HW = 21, SW = 21, max_harvest = FALSE
+results_scenario_3 <- run_aac_simulation(hw_volume = 21, sw_volume = 21,
+                                         aac_percentage = 0.6, min_stocking = 12,
+                                         max_harvest = FALSE)
+print(results_scenario_3)
+
+# Scenario 4 (no min_aac): HW = 21, SW = 21, max_harvest = FALSE, min_aac = FALSE
+results_scenario_4 <- run_aac_simulation(hw_volume = 21, sw_volume = 21,
+                                         aac_percentage = 0.6, min_stocking = 12,
+                                         max_harvest = FALSE, min_aac = FALSE)
+print(results_scenario_4)
+
+# Scenario 5 (no initial AAC): HW = 5, SW = 5, all defaults except min_stocking = 12
+results_scenario_5 <- run_aac_simulation(hw_volume = 5, sw_volume = 5,
+                                         aac_percentage = 0.6, min_stocking = 12,
+                                         max_harvest = FALSE)
+print(results_scenario_5)
 }
 \seealso{
-\code{\link{calculate_aac}}, \code{\link{run_aac_for_all}}
-
 Other AAC Functions: 
 \code{\link{calculate_aac}()},
 \code{\link{run_aac_for_all}()}
