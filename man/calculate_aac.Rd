@@ -40,10 +40,15 @@ calculate_aac(
 }
 \value{
 A list containing:
+
 - `hw_aac`: The AAC for hardwood (cords/acre).
+
 - `sw_aac`: The AAC for softwood (cords/acre).
+
 - `growth_rate`: The combined growth rate for the stand (cords/acre/year).
+
 - `hw_growth`: The prorated growth for hardwood (cords/acre/year).
+
 - `sw_growth`: The prorated growth for softwood (cords/acre/year).
 }
 \description{
@@ -81,8 +86,28 @@ If \code{min_aac = TRUE}, the function ensures that when the growth rate falls b
 future growth by preventing overstocking. If the user prefers to avoid this adjustment, they can set \code{min_aac = FALSE}. #
 }
 \examples{
+### Single Year Calculations
 
-# Function to run the AAC simulation for different scenarios
+#HW
+calculate_aac(hw_volume = 22, sw_volume = 0, aac_percentage = 2, min_stocking = 12,
+max_harvest = FALSE, min_aac = TRUE,
+sw_max_rate = .45, hw_max_rate = .40,
+min_rate = .02, maxvol = 38)
+
+#SW
+calculate_aac(hw_volume = 0, sw_volume = 22, aac_percentage = .5 , min_stocking = 12,
+max_harvest = FALSE, min_aac = TRUE,
+sw_max_rate = .45, hw_max_rate = .40,
+min_rate = .02, maxvol = 42)
+
+#MW
+calculate_aac(hw_volume = 13, sw_volume = 11, aac_percentage = 1, min_stocking = 14,
+max_harvest = TRUE, min_aac = TRUE,
+sw_max_rate = .45, hw_max_rate = .40,
+min_rate = .02, maxvol = 40)
+
+
+### Function to run the AAC simulation over multiple periods for different scenarios
 run_aac_simulation <- function(hw_volume, sw_volume, aac_percentage, min_stocking,
                                max_harvest, min_aac = TRUE, years = 15) {
   results <- data.frame(Year = numeric(), HW_Volume = numeric(), SW_Volume = numeric(),
@@ -154,6 +179,8 @@ results_scenario_5 <- run_aac_simulation(hw_volume = 5, sw_volume = 5,
 print(results_scenario_5)
 }
 \seealso{
+\code{\link{run_aac_simulation}}, \code{\link{calculate_max_volume}}, \code{\link{calculate_growth_rate}}
+
 \code{\link{calculate_growth_rate}}, \code{\link{calculate_max_volume}}
 
 Other AAC Functions: 

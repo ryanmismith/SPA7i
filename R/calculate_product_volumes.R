@@ -38,7 +38,7 @@
 #' print(product_volumes)
 #' @export
 
-calculate_product_volumes <- function(aac_results, ratios_df, years = 20) {
+calculateProductVolumes <- function(aac_results, ratios_df, years = 20) {
   final_results <- data.frame()
 
   # Convert column names in aac_results to lowercase
@@ -83,6 +83,7 @@ calculate_product_volumes <- function(aac_results, ratios_df, years = 20) {
 
     # Append the result for this year
     final_results <- dplyr::bind_rows(final_results, merged_df)
+    final_results <- final_results |> dplyr::filter(product_standing_volume != 0)
   }
 
   return(final_results)

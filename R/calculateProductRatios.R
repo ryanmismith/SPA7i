@@ -18,6 +18,7 @@
 #'   matrix = c("M1", "M1", "M1", "M2", "M2"),
 #'   product = c("ASl", "LVl", "CEl", "BFp", "HVp"),
 #'   cords = c(10, 15, 20, 5, 30)
+#'   acres = c(32, 32, 32, 55, 55)
 #' )
 #'
 #' calculateProductRatios(df)
@@ -25,6 +26,8 @@
 #' @export
 
 calculateProductRatios <- function(df) {
+
+  results <- data.frame()
 
   # Apply the mapWoodType function to categorize products as HW or SW
   df$wood_type <- mapWoodType(df$product)
@@ -44,8 +47,8 @@ calculateProductRatios <- function(df) {
     )
 
   result <- df |>
-    dplyr::select(.data$township, .data$matrix, .data$product,
-                  .data$wood_type, .data$cords, .data$HWratio, .data$SWratio)
+    dplyr::select(township, matrix, product,
+                  wood_type, acres, cords, HWratio, SWratio)
 
   return(result)
 }

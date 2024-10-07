@@ -1,6 +1,7 @@
 #' Load and prepare the data for analysis.
 #'
-#' @description This function loads volume data from a CSV file, converts the column names to lowercase,
+#' @description Takes ArcGIS data ouput for SPA and performs intitial tidying tasts.
+#' This function loads volume data from a CSV file, converts the column names to lowercase,
 #' and renames any column containing the word "matrix" to "matrix", if it's not already named "matrix".
 #'
 #' @param vols_path A string representing the file path to the CSV file containing volume data.
@@ -43,7 +44,8 @@
 #' print(vols_cleaned_2)
 #' }
 #' @export
-data_preparation <- function(vols_path) {
+
+dataPreparation <- function(vols_path) {
   # Read CSV file
   vols <- read.csv(vols_path)
 

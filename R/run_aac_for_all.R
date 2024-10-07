@@ -24,7 +24,7 @@
 #'
 #' @family AAC Functions
 #' @seealso \code{\link{calculate_aac}}, \code{\link{run_aac_simulation}}
-#'
+#' @importFrom dplyr bind_rows group_by group_map
 #' @examples
 #' # Simulated data
 #' vols_wide <- data.frame(
@@ -33,10 +33,13 @@
 #'   perAcreHW = c(12, 11, 0, 2),
 #'   perAcreSW = c(11, 5, 20, 14)
 #' )
-#' @importFrom dplyr bind_rows, group_by, group_map
+#'
 #' # Example usage
-#' results_combined <- run_aac_for_all(vols_wide, years = 20)
+#' results_combined <- run_aac_for_all(vols_wide, aac_percentage = 1,
+#' min_stocking = 12, years = 30, max_harvest = TRUE)
 #' print(results_combined)
+#'
+#'
 #' @export
 
 run_aac_for_all <- function(df, aac_percentage, min_stocking,

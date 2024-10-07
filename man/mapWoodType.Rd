@@ -40,7 +40,8 @@ mapWoodType(products)
 }
 \seealso{
 Other InputTransform Functions: 
+\code{\link{GrowthModelInput}()},
 \code{\link{calculateProductRatios}()},
-\code{\link{data_preparation}()}
+\code{\link{dataPreparation}()}
 }
 \concept{InputTransform Functions}
