@@ -101,6 +101,7 @@ plotNPVDistribution <- function(npv_results, plot_title = NULL, caption = TRUE, 
       axis.text = element_text(color = "black"),
       panel.grid.major = element_line(color = "#D3D3D3"),
       panel.grid.minor = element_blank(),
+      panel.border = element_blank(),
       plot.background = element_rect(fill = "white")
     )
 

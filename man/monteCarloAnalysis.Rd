@@ -92,3 +92,6 @@ ggplot(data.frame(NPV = result_hold$NPVs), aes(x = NPV)) +
   theme_minimal()
 
 }
+\seealso{
+\code{\link{ci_table}} \code{\link{landExpectVal}} \code{\link{simpleNPV}}
+}

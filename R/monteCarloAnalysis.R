@@ -5,6 +5,8 @@
 #' (for exit scenarios) at the terminal year value. The function returns the simulated NPVs
 #' and confidence intervals for the results.
 #'
+#'
+#'
 #' @param Flow Numeric vector of cash flows for the scenario.
 #' @param Occurrence Numeric vector of periods for each cash flow. Must be the same length as Flow.
 #' @param NominalRate Numeric value of the nominal discount rate for the scenario.
@@ -19,9 +21,8 @@
 #'
 #' @importFrom stats rnorm quantile
 #' @importFrom ggplot2 aes geom_histogram labs theme_minimal
-#'
+#' @seealso \code{\link{ci_table}} \code{\link{landExpectVal}} \code{\link{simpleNPV}}
 #' @return A list containing all simulated NPVs and confidence intervals (68%, 80%, 90%).
-#'
 #' @examples
 #' library(ggplot2)
 #'
@@ -107,10 +108,27 @@ monteCarloAnalysis <- function(
     NPVs[sim] <- npv_cash_flows + terminal_value
   }
 
-  # Calculate confidence intervals (68%, 80%, 90%)
-  CI_68 <- quantile(NPVs, c(0.16, 0.84))
-  CI_80 <- quantile(NPVs, c(0.10, 0.90))
-  CI_90 <- quantile(NPVs, c(0.05, 0.95))
+  # Perform Shapiro-Wilk test for normality
+  shapiro_test <- shapiro.test(NPVs)
+
+  if (shapiro_test$p.value > 0.05) {
+    # Data is normally distributed, use parametric confidence intervals
+
+    # Calculate mean and standard deviation
+    mean_npv <- mean(NPVs)
+    sd_npv <- sd(NPVs)
+
+    # Parametric confidence intervals (based on normal distribution)
+    CI_68 <- c(mean_npv - sd_npv, mean_npv + sd_npv)
+    CI_80 <- c(mean_npv - 1.28 * sd_npv, mean_npv + 1.28 * sd_npv)  # ~80% CI
+    CI_90 <- c(mean_npv - 1.65 * sd_npv, mean_npv + 1.65 * sd_npv)  # ~90% CI
+  } else {
+    # Data is not normally distributed, use non-parametric quantile-based confidence intervals
+
+    CI_68 <- quantile(npv_values, c(0.16, 0.84))
+    CI_80 <- quantile(npv_values, c(0.10, 0.90))
+    CI_90 <- quantile(npv_values, c(0.05, 0.95))
+  }
 
   # Return a list containing all NPVs and confidence intervals
   return(list(
