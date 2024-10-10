@@ -1,0 +1,158 @@
+---
+title: "NPV Analysis Report"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    theme: united
+date: "`r Sys.Date()`"
+---
+
+<style>
+/* Add a full black border around the entire table */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 20px auto;
+  border: 1px solid black;  /* Full border around the table */
+}
+
+/* Ensure both table headers and cells have borders */
+table th, table td {
+  border: 1px solid black;  /* Full border around each cell */
+  padding: 10px;
+  text-align: center;
+}
+
+/* Optional: Style the table header */
+table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+</style>
+
+```{r setup, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(SPA7i)
+library(ggplot2)
+
+# Load and clean the data
+vols <- dataPreparation("~/Projects/SPA/Arc Outputs/SPA_test3.csv")
+
+
+# Create Necessary Dataframes
+
+ratios <- calculateProductRatios(vols)
+peracre <- GrowthModelInput(vols)
+results_combined <- run_aac_for_all(peracre, 1.5, 10)
+product_volumes <- calculateProductVolumes(results_combined, ratios)
+
+# 
+# Filtering and calculating product values
+product_values <- c("ASl" = 120, "ASp" = 115, "BFl" = 185, "BFp" = 20, "CEl" = 215,
+                    "CEp" = 0, "HVl" = 300, "HVp" = 25, "HVt" = 135, "LVl" = 140,
+                    "LVp" = 25, "LVt" = 95, "OSl" = 75, "OSp" = 20, "SPl" = 165,
+                    "SPp" = 20, "WPl" = 150, "WPp" = 10)
+
+product_values_df <- data.frame(product = names(product_values), product_value = as.numeric(product_values))
+
+product_volumes <- product_volumes %>%
+  left_join(product_values_df, by = "product") %>%
+  mutate(
+    harvest_value = product_harvest_volume * product_value,
+    standing_value = product_standing_volume * product_value
+  )
+
+product_volumes <- product_volumes |> filter(is.na(harvest_value) == FALSE)
+
+# Calculate NPV values
+NPVvalues <- product_volumes %>%
+  group_by(year) %>%
+  summarise(harvest_value = sum(harvest_value), standing_value = sum(standing_value))
+
+
+max_year <- max(NPVvalues$year)
+final_standing_value <- NPVvalues %>% filter(year == max_year) %>% pull(standing_value)
+
+# Creating the final flow dataframe
+flow_df <- NPVvalues %>%
+  select(year, harvest_value)
+
+# Monte Carlo Analysis
+npv <- monteCarloAnalysis(Flow = flow_df$harvest_value, Occurrence = flow_df$year,
+                          NominalRate = .05, TerminalYear = 20, FutureValue = final_standing_value,
+                          Exit = FALSE)# Filtering and calculating product values
+ci_data <- ci_table(npv$NPVs)
+
+# Extract the mean NPV value
+mean_npv <- mean(npv$NPVs)
+
+# Extract the 80% CI values from ci_data
+lower_bound_80 <- ci_data[ci_data$CI == '80%', 'Lower_Bound']
+upper_bound_80 <- ci_data[ci_data$CI == '80%', 'Upper_Bound']
+spread <- upper_bound_80 - lower_bound_80
+```
+
+\pagebreak
+
+# Net Present Value (NPV) 
+
+The mean NPV value is `$`**`r format(mean_npv, big.mark = ",", digits = 2)`** and the 80% confidence intervals have a lower bound of `$`**`r format(lower_bound_80, big.mark = ",", digits = 2)`** and an upper bound of `$`**`r format(upper_bound_80, big.mark = ",", digits = 2)`**. The spread between the upper and lower bounds is `$`**`r format(spread, big.mark = ",", digits = 2)`**.
+
+
+## NPV Monte Carlo Distribution
+
+<div style="text-align: center;">
+
+```{r npv-distribution-plot, echo=FALSE, fig.width=7, fig.height=5.5, out.extra='style="border:none;"'}
+plotNPVDistribution(npv, "T9R11 Parcel", FALSE, TRUE)
+```
+
+</div>
+
+\n
+
+## Confidence Intervals for NPV
+
+<div style="text-align: center;">
+
+```{r ci-table, warning=FALSE, message=FALSE, echo=FALSE}
+# Call the `ci_table` function to generate the confidence interval data
+ci_data <- ci_table(npv$NPVs)
+
+# Rename and format the columns with dollar signs and commas
+ci_data <- ci_data %>%
+  rename("Lower Bound" = "Lower_Bound", "Upper Bound" = "Upper_Bound") %>% 
+  mutate(
+    `Lower Bound` = paste0("$", format(`Lower Bound`, big.mark = ",", scientific = FALSE)),
+    `Upper Bound` = paste0("$", format(`Upper Bound`, big.mark = ",", scientific = FALSE))
+  )
+
+# Use knitr's kable function to display the table with formatted column headers
+knitr::kable(ci_data, col.names = c("CI", "Lower Bound", "Upper Bound"), caption = "Upper and Lower Bounds for Key Confidence Intervals" 
+             )
+```
+
+</div>
+
+\n
+
+# Final Standing Summary
+
+The following table provides a summary of the final standing of the project, generated using the generate_final_standing_summary function.
+
+<div style="text-align: center;">
+
+```{r final-standing-summary, warning=FALSE, message=FALSE, echo=FALSE}
+# Call the `generate_final_standing_summary` function to generate summary data
+final_standing_data <- generate_final_standing_summary(results_combined)
+
+# Display the final standing summary table in the PDF with column headers
+knitr::kable(final_standing_data, col.names = colnames(final_standing_data), 
+             caption = "Final Standing Summary")
+```
+
+</div>
