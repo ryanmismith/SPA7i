@@ -3,11 +3,12 @@ title: "NPV Analysis Report"
 output:
   html_document:
     toc: true
-    toc_depth: 2
+    toc_depth: 3
     theme: united
 date: "`r Sys.Date()`"
 ---
 
+```{=html}
 <style>
 /* Add a full black border around the entire table */
 table {
@@ -30,7 +31,7 @@ table th {
   font-weight: bold;
 }
 </style>
-
+```
 ```{r setup, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
@@ -47,7 +48,7 @@ vols <- dataPreparation("~/Projects/SPA/Arc Outputs/SPA_test3.csv")
 
 ratios <- calculateProductRatios(vols)
 peracre <- GrowthModelInput(vols)
-results_combined <- run_aac_for_all(peracre, 1.5, 10)
+results_combined <- run_aac_for_all(peracre, .5, 10, TRUE, TRUE, 30)
 product_volumes <- calculateProductVolumes(results_combined, ratios)
 
 # 
@@ -94,31 +95,42 @@ mean_npv <- mean(npv$NPVs)
 lower_bound_80 <- ci_data[ci_data$CI == '80%', 'Lower_Bound']
 upper_bound_80 <- ci_data[ci_data$CI == '80%', 'Upper_Bound']
 spread <- upper_bound_80 - lower_bound_80
+
+total_acres <- vols |> group_by(township, matrix) |> slice(1) |> summarise(acres = sum(acres)) |> ungroup() |> summarise(round(sum(acres),1))
+township_acres <- vols |> 
+  rename(Township = "township") |> 
+  group_by(Township) |> slice(1) |> 
+  summarise(Acres = round(sum(acres),1))
+matrix_acres <- vols |> 
+  rename(Matrix = "matrix") |> 
+  group_by(Matrix) |> slice(1) |> 
+  summarise(Acres = round(sum(acres),1))
+
+# Stocking
+stockingsummary <- summarizeProductVolumes(results_combined, ratios)
+total_initial_cords <- sum(stockingsummary$summary_volumes$initial_volume)
+total_final_cords <- sum(stockingsummary$summary_volumes$final_volume)
 ```
 
 \pagebreak
 
-# Net Present Value (NPV) 
+# Net Present Value (NPV)
 
-The mean NPV value is `$`**`r format(mean_npv, big.mark = ",", digits = 2)`** and the 80% confidence intervals have a lower bound of `$`**`r format(lower_bound_80, big.mark = ",", digits = 2)`** and an upper bound of `$`**`r format(upper_bound_80, big.mark = ",", digits = 2)`**. The spread between the upper and lower bounds is `$`**`r format(spread, big.mark = ",", digits = 2)`**.
-
+The mean NPV value is **`r format(mean_npv, big.mark = ",", digits = 2)`** and the 80% confidence intervals have a lower bound of **`r format(lower_bound_80, big.mark = ",", digits = 2)`** and an upper bound of **`r format(upper_bound_80, big.mark = ",", digits = 2)`**. The spread between the upper and lower bounds is **`r format(spread, big.mark = ",", digits = 2)`**.
 
 ## NPV Monte Carlo Distribution
 
-<div style="text-align: center;">
-
+::: {style="text-align: center;"}
 ```{r npv-distribution-plot, echo=FALSE, fig.width=7, fig.height=5.5, out.extra='style="border:none;"'}
 plotNPVDistribution(npv, "T9R11 Parcel", FALSE, TRUE)
 ```
-
-</div>
+:::
 
 \n
 
 ## Confidence Intervals for NPV
 
-<div style="text-align: center;">
-
+::: {style="text-align: center;"}
 ```{r ci-table, warning=FALSE, message=FALSE, echo=FALSE}
 # Call the `ci_table` function to generate the confidence interval data
 ci_data <- ci_table(npv$NPVs)
@@ -135,24 +147,119 @@ ci_data <- ci_data %>%
 knitr::kable(ci_data, col.names = c("CI", "Lower Bound", "Upper Bound"), caption = "Upper and Lower Bounds for Key Confidence Intervals" 
              )
 ```
-
-</div>
+:::
 
 \n
 
-# Final Standing Summary
+# Financial Assumptions
 
-The following table provides a summary of the final standing of the project, generated using the generate_final_standing_summary function.
+This is a placeholder. Populating this section is not possible without building the application.
 
-<div style="text-align: center;">
+## Data populated by the user
 
-```{r final-standing-summary, warning=FALSE, message=FALSE, echo=FALSE}
+-   This is where user information entered re: revenues and expenses will be entered.
+
+-   One time and annual expenses (mgmt fees, roads, etc.)
+
+-   One time and annual revenues from HBU or other sources.
+
+## Harvest Revenue Assumptions
+
+\pagebreak
+
+# Area Summary
+
+The total forested area is `r total_acres` acres.
+
+## Forested Acres - Township
+
+::: {style="text-align: center;"}
+```{r township_acres-table, warning=FALSE, message=FALSE, echo=FALSE}
+knitr::kable(
+  township_acres,
+  caption = "Forested Acres By Township"
+)
+```
+:::
+
+## Forested Acres - Matrix
+
+::: {style="text-align: center;"}
+```{r matrix_acres-table, warning=FALSE, message=FALSE, echo=FALSE}
+knitr::kable(
+  matrix_acres,
+  caption = "Forested Acres By Matrix"
+)
+```
+:::
+
+-   Other details
+    -   Gross acres vs forested.
+    -   Developed acres.
+    -   Riparian and Deer Yard acres.
+-   The specific summaries for the geographic area of interest still need to be defined.
+
+\pagebreak
+
+# Stocking and AAC Summary
+
+The initial total stocking is **`r format(total_initial_cords, big.mark = ",")`** cords, or **`r round(total_initial_cords/total_acres, 1)`** cords/acre.
+
+\n
+
+The final stocking at **year `r max(stockingsummary$summary_volumes$final_year)`** is **`r format(total_final_cords, big.mark = ",")`** cords, or **`r round(total_final_cords/total_acres, 1)`** cords/acre.
+
+\n
+
+The following table provides a stocking summary at the start of the simulation and the final stocking at the end of the simulation, Year `r max(stockingsummary$summary_volumes$final_year)`.
+
+## Stocking Table
+
+::: {style="text-align: center;"}
+```{r stocking-table, warning=FALSE, message=FALSE, echo=FALSE}
 # Call the `generate_final_standing_summary` function to generate summary data
-final_standing_data <- generate_final_standing_summary(results_combined)
+stockingtable <- stockingsummary$summary_volumes |> select(species_group, initial_volume, final_volume)
 
-# Display the final standing summary table in the PDF with column headers
-knitr::kable(final_standing_data, col.names = colnames(final_standing_data), 
-             caption = "Final Standing Summary")
+# Dynamically set the column names and pass them directly to kable
+knitr::kable(
+  stockingtable,
+  col.names = c("Species Group", "Year 1 Cords", paste0("Year ", max(stockingsummary$summary_volumes$final_year), " Cords")),
+  caption = "Total Stocking Summary"
+)
+```
+:::
+
+\pagebreak
+
+### Stocking Plots
+
+::: {style="text-align: center;"}
+```{r annual-stocking-plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=3}
+stockingplots <- plotProductVolumes(stockingsummary)
+stockingplots$annual_inventory_plot
 ```
 
-</div>
+\n
+
+```{r summary-stocking-plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=3}
+
+stockingplots$stockingplot
+
+```
+:::
+
+\pagebreak
+
+### AAC Plots
+
+::: {style="text-align: center;"}
+```{r annual-aac-plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=3}
+stockingplots$annual_aac_plot
+```
+
+\n
+
+```{r summary-aac-plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=3}
+stockingplots$aacplot
+```
+:::

@@ -59,5 +59,9 @@ print(npv_plot2)
 }
 \seealso{
 \code{\link{monteCarloAnalysis}}
+
+Other Reporting Functions: 
+\code{\link{plotProductVolumes}()},
+\code{\link{summarizeProductVolumes}()}
 }
 \concept{Reporting Functions}
