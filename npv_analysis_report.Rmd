@@ -4,7 +4,7 @@ output:
   html_document:
     toc: true
     toc_depth: 3
-    theme: united
+    theme: journal
 date: "`r Sys.Date()`"
 ---
 
@@ -13,16 +13,18 @@ date: "`r Sys.Date()`"
 /* Add a full black border around the entire table */
 table {
   border-collapse: collapse;
-  width: 100%;
-  margin: 20px auto;
+  width: 80%;  /* Adjust the width to allow for larger margins */
+  margin: 30px auto;
   border: 1px solid black;  /* Full border around the table */
 }
+
 
 /* Ensure both table headers and cells have borders */
 table th, table td {
   border: 1px solid black;  /* Full border around each cell */
   padding: 10px;
   text-align: center;
+  color: black;
 }
 
 /* Optional: Style the table header */
@@ -30,8 +32,24 @@ table th {
   background-color: #f2f2f2;
   font-weight: bold;
 }
+
+ /* Add space between headers and figures */
+  h3 {
+    margin-bottom: 20px;
+  }
+
+  /* Add space between figures (images) */
+  img {
+  padding-bottom: 20px;
+}
+.centered-plot {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
 </style>
 ```
+
 ```{r setup, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
@@ -39,6 +57,8 @@ library(tidyr)
 library(purrr)
 library(SPA7i)
 library(ggplot2)
+library(knitr)
+library(kableExtra)
 
 # Load and clean the data
 vols <- dataPreparation("~/Projects/SPA/Arc Outputs/SPA_test3.csv")
@@ -116,7 +136,7 @@ total_final_cords <- sum(stockingsummary$summary_volumes$final_volume)
 
 # Net Present Value (NPV)
 
-The mean NPV value is **`r format(mean_npv, big.mark = ",", digits = 2)`** and the 80% confidence intervals have a lower bound of **`r format(lower_bound_80, big.mark = ",", digits = 2)`** and an upper bound of **`r format(upper_bound_80, big.mark = ",", digits = 2)`**. The spread between the upper and lower bounds is **`r format(spread, big.mark = ",", digits = 2)`**.
+The mean NPV value is **$`r format(mean_npv, big.mark = ",", digits = 2)`** and the 80% confidence intervals have a lower bound of **$`r format(lower_bound_80, big.mark = ",", digits = 2)`** and an upper bound of **$`r format(upper_bound_80, big.mark = ",", digits = 2)`**. The spread between the upper and lower bounds is **$`r format(spread, big.mark = ",", digits = 2)`**.
 
 ## NPV Monte Carlo Distribution
 
@@ -140,24 +160,43 @@ ci_data <- ci_data %>%
   rename("Lower Bound" = "Lower_Bound", "Upper Bound" = "Upper_Bound") %>% 
   mutate(
     `Lower Bound` = paste0("$", format(`Lower Bound`, big.mark = ",", scientific = FALSE)),
+    Mean = paste0("$", format(mean_npv, big.mark = ",", scientific = FALSE)),
     `Upper Bound` = paste0("$", format(`Upper Bound`, big.mark = ",", scientific = FALSE))
-  )
+  ) %>%
+  select(CI, `Lower Bound`, Mean, `Upper Bound`)  # Reorder columns here
 
 # Use knitr's kable function to display the table with formatted column headers
-knitr::kable(ci_data, col.names = c("CI", "Lower Bound", "Upper Bound"), caption = "Upper and Lower Bounds for Key Confidence Intervals" 
-             )
+ci_data %>%
+  kable(col.names = c("CI", "Lower Bound", "Mean", "Upper Bound"),
+        caption = "Upper Bound, Mean, and Lower Bound for Key Confidence Intervals",
+        escape = FALSE, align = "c") %>%
+  kable_styling(full_width = FALSE, position = "center", bootstrap_options = c("striped", "condensed")) %>%
+  column_spec(1, width = "3.5cm") %>%
+  column_spec(2, width = "3.5cm") %>%
+  column_spec(3, width = "3.5cm") %>%
+  column_spec(4, width = "3.5cm")
 ```
 :::
 
 \n
 
-# Financial Assumptions
+# Financials
 
-This is a placeholder. Populating this section is not possible without building the application.
+## Initial Standing Value
+
+**This is a placeholder.** 
+
+## Standing Value Across Time
+
+**This is a placeholder.** 
+
+## Final Standing Value
+
+**This is a placeholder. Populating this section is not possible without building the application.**
 
 ## Data populated by the user
 
--   This is where user information entered re: revenues and expenses will be entered.
+-   ***This is where user information entered re: revenues and expenses will be entered.***
 
 -   One time and annual expenses (mgmt fees, roads, etc.)
 
@@ -177,8 +216,11 @@ The total forested area is `r total_acres` acres.
 ```{r township_acres-table, warning=FALSE, message=FALSE, echo=FALSE}
 knitr::kable(
   township_acres,
-  caption = "Forested Acres By Township"
-)
+  caption = "Forested Acres By Township",
+  escape = FALSE, align = "c") %>%
+  kable_styling(full_width = FALSE, position = "center", bootstrap_options = c("striped", "condensed")) %>%
+  column_spec(1, width = "6cm") %>%
+  column_spec(2, width = "6cm") 
 ```
 :::
 
@@ -188,16 +230,19 @@ knitr::kable(
 ```{r matrix_acres-table, warning=FALSE, message=FALSE, echo=FALSE}
 knitr::kable(
   matrix_acres,
-  caption = "Forested Acres By Matrix"
-)
+  caption = "Forested Acres By Matrix", escape = FALSE, align = "c"
+) %>%
+  kable_styling(full_width = FALSE, position = "center", bootstrap_options = c("striped", "condensed")) %>%
+  column_spec(1, width = "5cm") %>%
+  column_spec(2, width = "5cm") 
 ```
 :::
 
--   Other details
+-   **Other details**
     -   Gross acres vs forested.
     -   Developed acres.
     -   Riparian and Deer Yard acres.
--   The specific summaries for the geographic area of interest still need to be defined.
+-   ***The specific summaries for the geographic area of interest still need to be defined.***
 
 \pagebreak
 
@@ -224,42 +269,42 @@ stockingtable <- stockingsummary$summary_volumes |> select(species_group, initia
 knitr::kable(
   stockingtable,
   col.names = c("Species Group", "Year 1 Cords", paste0("Year ", max(stockingsummary$summary_volumes$final_year), " Cords")),
-  caption = "Total Stocking Summary"
-)
+  caption = "Total Stocking Summary",
+  escape = FALSE, align = c('l','c','c')
+) %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "condensed")) %>%
+  column_spec(1, width = "4cm") %>%
+  column_spec(2, width = "4cm") |> 
+  column_spec(3, width = "4cm") %>%
+  row_spec(0, bold = TRUE, background = "#f2f2f2")
 ```
 :::
 
 \pagebreak
 
 ### Stocking Plots
-
-::: {style="text-align: center;"}
-```{r annual-stocking-plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=3}
+```{r annual-stocking-plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=3, out.extra='style="border:none;"'}
 stockingplots <- plotProductVolumes(stockingsummary)
 stockingplots$annual_inventory_plot
 ```
 
-\n
-
-```{r summary-stocking-plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=3}
+```{r summary-stocking-plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=3, out.extra='style="border:none;"'}
 
 stockingplots$stockingplot
 
 ```
-:::
+
 
 \pagebreak
 
 ### AAC Plots
 
-::: {style="text-align: center;"}
-```{r annual-aac-plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=3}
+```{r annual-aac-plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=3, out.extra='style="border:none;"'}
 stockingplots$annual_aac_plot
 ```
 
-\n
 
-```{r summary-aac-plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=3}
+```{r summary-aac-plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=3, out.extra='style="border:none;"'}
 stockingplots$aacplot
 ```
-:::
+
