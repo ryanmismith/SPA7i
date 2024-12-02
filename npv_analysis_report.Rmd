@@ -68,7 +68,7 @@ vols <- dataPreparation("~/Projects/SPA/Arc Outputs/SPA_test3.csv")
 
 ratios <- calculateProductRatios(vols)
 peracre <- GrowthModelInput(vols)
-results_combined <- run_aac_for_all(peracre, .5, 10, TRUE, TRUE, 30)
+results_combined <- run_aac_for_all(peracre, 1.5, 10, TRUE, FALSE, 30)
 product_volumes <- calculateProductVolumes(results_combined, ratios)
 
 # 
