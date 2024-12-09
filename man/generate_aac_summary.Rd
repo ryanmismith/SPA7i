@@ -49,6 +49,7 @@ print(aac_summary)
 \seealso{
 Other Summary Functions: 
 \code{\link{ci_table}()},
-\code{\link{generate_final_standing_summary}()}
+\code{\link{generate_final_standing_summary}()},
+\code{\link{generate_initial_matrix_summary}()}
 }
 \concept{Summary Functions}

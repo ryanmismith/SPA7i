@@ -61,6 +61,7 @@ Shapiro, S. S., & Wilk, M. B. (1965). An analysis of variance test for normality
 
 Other Summary Functions: 
 \code{\link{generate_aac_summary}()},
-\code{\link{generate_final_standing_summary}()}
+\code{\link{generate_final_standing_summary}()},
+\code{\link{generate_initial_matrix_summary}()}
 }
 \concept{Summary Functions}

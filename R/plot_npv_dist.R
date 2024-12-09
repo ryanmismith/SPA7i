@@ -66,7 +66,7 @@ plotNPVDistribution <- function(npv_results, plot_title = NULL, caption = TRUE, 
 
   if (!is.null(binwidth)) {
     binwidth <- binwidth
-  } else if (max(NPVvalues) > 250000) {
+  } else if (max(npv_values) > 250000) {
     binwidth <- round(max(npv_values)/50, -4)
   } else {
     binwidth <- round(max(npv_values)/50, -3)

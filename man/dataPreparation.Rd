@@ -2,54 +2,33 @@
 % Please edit documentation in R/data_load_prep.R
 \name{dataPreparation}
 \alias{dataPreparation}
-\title{Load and prepare the data for analysis.}
+\title{Load and prepare data for analysis from an Excel file.}
 \usage{
-dataPreparation(vols_path)
+dataPreparation(filepath)
 }
 \arguments{
-\item{vols_path}{A string representing the file path to the CSV file containing volume data.}
+\item{filepath}{A string representing the file path to the Excel file containing the data.}
 }
 \value{
-A cleaned dataframe with lowercase column names and the renamed 'matrix' column.
+A named list with two dataframes: "Inventory" and "Spatial".
+The "Inventory" dataframe contains selected and cleaned data from the "Inventory" sheet.
+The "Spatial" dataframe contains all lowercase text from the "Spatial" sheet.
 }
 \description{
-Takes ArcGIS data ouput for SPA and performs intitial tidying tasts.
-This function loads volume data from a CSV file, converts the column names to lowercase,
-and renames any column containing the word "matrix" to "matrix", if it's not already named "matrix".
+This function processes an Excel file with two sheets:
+"Inventory" and "Spatial". The "Inventory" sheet is cleaned by selecting
+relevant columns (`township`, `matrix`, `acres`, `product`, `cords`), and any
+column containing the word "matrix" is renamed to "matrix" if not already named so.
+The "Spatial" sheet has all its colnames converted to lowercase.
 }
 \examples{
 \dontrun{
-# Example 1: Column named 'lumpmatrix'
-simulated_data_1 <- data.frame(
-  lumpmatrix = c("matrix1", "matrix2", "matrix1"),
-  product = c("perAcreHW", "perAcreSW", "perAcreHW"),
-  cords = c(100, 50, 200),
-  township = c("township1", "township1", "township2"),
-  acres = c(10, 20, 15)
-)
-# Save to CSV in a temporary directory
-temp_file_1 <- file.path(tempdir(), "SPA_test1.csv")
-write.csv(simulated_data_1, temp_file_1, row.names = FALSE)
-
-# Example usage where 'lumpmatrix' gets renamed to 'matrix'
-vols_cleaned_1 <- data_preparation(temp_file_1)
-print(vols_cleaned_1)
-
-# Example 2: Column already named 'MATRIX'
-simulated_data_2 <- data.frame(
-  MATRIX = c("matrix1", "matrix2", "matrix1"),
-  product = c("perAcreHW", "perAcreSW", "perAcreHW"),
-  cords = c(100, 50, 200),
-  township = c("township1", "township1", "township2"),
-  acres = c(10, 20, 15)
-)
-# Save to CSV in a temporary directory
-temp_file_2 <- file.path(tempdir(), "SPA_test2.csv")
-write.csv(simulated_data_2, temp_file_2, row.names = FALSE)
-
-# Example usage where 'MATRIX' is already 'matrix' and remains unchanged
-vols_cleaned_2 <- data_preparation(temp_file_2)
-print(vols_cleaned_2)
+# Example usage with an Excel file containing "Inventory" and "Spatial" sheets.
+data_list <- dataPreparation("path_to_excel_file.xlsx")
+inventory_data <- data_list$Inventory
+spatial_data <- data_list$Spatial
+print(inventory_data)
+print(spatial_data)
 }
 }
 \seealso{

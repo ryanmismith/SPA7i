@@ -49,7 +49,6 @@ table th {
 
 </style>
 ```
-
 ```{r setup, warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
@@ -136,7 +135,7 @@ total_final_cords <- sum(stockingsummary$summary_volumes$final_volume)
 
 # Net Present Value (NPV)
 
-The mean NPV value is **$`r format(mean_npv, big.mark = ",", digits = 2)`** and the 80% confidence intervals have a lower bound of **$`r format(lower_bound_80, big.mark = ",", digits = 2)`** and an upper bound of **$`r format(upper_bound_80, big.mark = ",", digits = 2)`**. The spread between the upper and lower bounds is **$`r format(spread, big.mark = ",", digits = 2)`**.
+The mean NPV value is $`r format(mean_npv, big.mark = ",", digits = 2)`** and the 80% confidence intervals have a lower bound of **$`r format(lower_bound_80, big.mark = ",", digits = 2)` and an upper bound of $`r format(upper_bound_80, big.mark = ",", digits = 2)`**. The spread between the upper and lower bounds is **$`r format(spread, big.mark = ",", digits = 2)`.
 
 ## NPV Monte Carlo Distribution
 
@@ -184,11 +183,11 @@ ci_data %>%
 
 ## Initial Standing Value
 
-**This is a placeholder.** 
+**This is a placeholder.**
 
 ## Standing Value Across Time
 
-**This is a placeholder.** 
+**This is a placeholder.**
 
 ## Final Standing Value
 
@@ -283,6 +282,7 @@ knitr::kable(
 \pagebreak
 
 ### Stocking Plots
+
 ```{r annual-stocking-plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=3, out.extra='style="border:none;"'}
 stockingplots <- plotProductVolumes(stockingsummary)
 stockingplots$annual_inventory_plot
@@ -294,7 +294,6 @@ stockingplots$stockingplot
 
 ```
 
-
 \pagebreak
 
 ### AAC Plots
@@ -303,8 +302,6 @@ stockingplots$stockingplot
 stockingplots$annual_aac_plot
 ```
 
-
 ```{r summary-aac-plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=3, out.extra='style="border:none;"'}
 stockingplots$aacplot
 ```
-
