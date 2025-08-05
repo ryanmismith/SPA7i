@@ -1,44 +1,45 @@
-#’ Calculate Growth Rate by Township
-#’
-#’ @description
-#’ `calculate_growth_rate()` computes a non‐linear, power‐law declining annual growth
-#’ rate for a stand, using its township code to select case‐specific parameters.
-#’ The curve declines from a user‐specified base volume up to a biological maximum.
-#’
-#’ @details
-#’ Internally, each township is mapped to one of four “cases” (SP, RY, AE, AW),
-#’ each with its own softwood start rate, hardwood start rate, exponent \(p\)
-#’ and minimum floor rate.  The function:
-#’ 1. Splits total volume into HW and SW components.
-#’ 2. Computes the biological max via \code{\link{calculate_max_volume}}.
-#’ 3. Normalizes a “decline factor” from \code{base_vol} to \code{maxvol}.
-#’ 4. Applies a power‐law:
-#’   \deqn{rate = start\_rate - (start\_rate - min\_rate) \times decline\_factor^p,}
-#’   enforcing \(\mathrm{rate} \ge \mathrm{min\_rate}\).
-#’
-#’ @param township  Character.  The stand’s township code (e.g. "T10R9", "Davis").
-#’ @param hw_volume Numeric.  Hardwood volume in cords/acre.
-#’ @param sw_volume Numeric.  Softwood volume in cords/acre.
-#’ @param base_vol   Numeric.  Volume (cords/acre) below which no decline applies. Default: 6.
-#’ @param maxvol     Numeric.  Biological maximum volume for decline calculation. Default: 38.
-#’
-#’ @return Numeric.  The predicted annual growth rate (cords/acre/yr), constrained between
-#’ the case‐specific minimum floor and the weighted start rate.
-#’
-#’ @family Growth and Yield Functions
-#’ @seealso \code{\link{calculate_max_volume}}, \code{\link{assign_spa_unit}}
-#’
-#’ @examples
-#’ # pure softwood in RY township:
-#’ calculate_growth_rate("Davis", hw_volume =  5, sw_volume = 25)
-#’
-#’ # mixed stand in SP township, below base_vol (no decline):
-#’ calculate_growth_rate("T10R15", hw_volume =  1, sw_volume =  4)
-#’
-#’ # at or above maxvol → floor applies:
-#’ calculate_growth_rate("Upton", hw_volume = 30, sw_volume = 10)
-#’
-#’ @export
+#' Calculate Growth Rate by Township
+#'
+#' @description
+#' `calculate_growth_rate()` computes a non‐linear, power‐law declining annual growth
+#' rate for a stand, using its township code to select case‐specific parameters.
+#' The curve declines from a user‐specified base volume up to a biological maximum.
+#'
+#' @details
+#' Internally, each township is mapped to one of four “cases” (SP, RY, AE, AW),
+#' each with its own softwood start rate, hardwood start rate, exponent \(p\)
+#' and minimum floor rate.  The function:
+#' 1. Splits total volume into HW and SW components.
+#' 2. Computes the biological max via \code{\link{calculate_max_volume}}.
+#' 3. Normalizes a “decline factor” from \code{base_vol} to \code{maxvol}.
+#' 4. Applies a power‐law:
+#'   \deqn{rate = start\_rate - (start\_rate - min\_rate) \times decline\_factor^p,}
+#'   enforcing \(\mathrm{rate} \ge \mathrm{min\_rate}\).
+#'
+#' @param township  Character.  The stand's township code (e.g. "T10R9", "Davis").
+#' @param hw_volume Numeric.  Hardwood volume in cords/acre.
+#' @param sw_volume Numeric.  Softwood volume in cords/acre.
+#' @param base_vol   Numeric.  Volume (cords/acre) below which no decline applies. Default: 6.
+#' @param maxvol     Numeric.  Biological maximum volume for decline calculation. Default: 38.
+#'
+#' @return Numeric.  The predicted annual growth rate (cords/acre/yr), constrained between
+#' the case‐specific minimum floor and the weighted start rate.
+#'
+#' @family Growth and Yield Functions
+#' @seealso \code{\link{calculate_max_volume}}, \code{\link{assign_spa_unit}}
+#'
+#' @examples
+#' # pure softwood in RY township:
+#' calculate_growth_rate("Davis", hw_volume =  5, sw_volume = 25)
+#'
+#' # mixed stand in SP township, below base_vol (no decline):
+#' calculate_growth_rate("T10R15", hw_volume =  1, sw_volume =  4)
+#'
+#' # at or above maxvol → floor applies:
+#' calculate_growth_rate("Upton", hw_volume = 30, sw_volume = 10)
+#'
+#' @export
+
 calculate_growth_rate <- function(township = 'T13R5',
                                   hw_volume,
                                   sw_volume,
