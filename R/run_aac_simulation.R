@@ -52,7 +52,8 @@
 #' print(results_scenario_5)
 #' @export
 
-run_aac_simulation <- function(hw_volume, sw_volume, aac_percentage, min_stocking,
+run_aac_simulation <- function(township = 'T13R5',
+                               hw_volume, sw_volume, aac_percentage, min_stocking,
                                max_harvest = FALSE, min_aac = TRUE, years = 20) {
   # results <- data.frame(Year = numeric(), HW_Volume = numeric(), SW_Volume = numeric(),
   #                       Total_Volume = numeric(), HW_AAC = numeric(), SW_AAC = numeric(),
@@ -79,7 +80,8 @@ run_aac_simulation <- function(hw_volume, sw_volume, aac_percentage, min_stockin
 
   for (year in 1:years) {
     # Calculate AAC for the year
-    aac_result <- calculate_aac(hw_volume, sw_volume, aac_percentage, min_stocking,
+    aac_result <- calculate_aac(township = township,
+                                hw_volume, sw_volume, aac_percentage, min_stocking,
                                 max_harvest, min_aac, maxvol = maxVol)
 
     # Update volumes for next year, ensuring no negative or NaN volumes

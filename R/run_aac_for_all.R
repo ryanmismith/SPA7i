@@ -52,11 +52,13 @@ run_aac_for_all <- function(df, aac_percentage, min_stocking,
     dplyr::group_by(township, matrix) |>
     dplyr::group_map(~ {
       # Process each group with scalar values
+      twp       <- .x$township[1]
       hw_volume <- as.numeric(.x$perAcreHW[1])
       sw_volume <- as.numeric(.x$perAcreSW[1])
 
       # Run the AAC simulation for each group
-      result <- run_aac_simulation(hw_volume, sw_volume, aac_percentage, min_stocking,
+      result <- run_aac_simulation(township = twp,
+                                   hw_volume, sw_volume, aac_percentage, min_stocking,
                                    max_harvest = max_harvest, min_aac = min_aac, years = years)
 
       # Add township and matrix information to the result

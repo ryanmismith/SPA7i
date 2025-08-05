@@ -110,7 +110,7 @@ summarizeProductVolumes <- function(aac_results, ratios_df, years = 20) {
     select(group, year, product_class, total_volume, total_harvest, product_percent, harvest_percent)
 
   # Get the first year (1) and final year (where sum(product_standing_volume) > 0)
-  first_year <- 1
+  first_year <- 2
   final_year <- product_volumes |>
     dplyr::group_by(year) |>
     dplyr::summarize(total_volume = sum(product_standing_volume, na.rm = TRUE)) |>

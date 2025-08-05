@@ -1,84 +1,99 @@
-#' Calculate Growth Rate
-#'
-#' @description This function calculates the non-linear declining growth rate for a stand or matrix based on its hardwood (HW) and softwood (SW) volumes
-#' as it approaches its calculated `max_volume` using the \code{\link{calculate_max_volume}} function. It factors in different starting rates for HW and SW growth
-#' to address differences in growth behavior between them.
-#'
-#' @details
-#' The function calculates the maximum allowable volume using the \code{\link{calculate_max_volume}} function, which can be influenced by the optional `maxvol` argument (defaulting to 38 cords).
-#' It then uses a non-linear interpolation model to determine the growth rate as the combined HW and SW volumes increase towards the calculated maximum.
-#' The growth rate declines quadratically and never goes below the specified minimum rate.
-#'
-#' The calculation uses a quadratic interpolation:
-#' \deqn{rate = start\_rate - (start\_rate - min\_rate) \times (decline\_factor^{2})}
-#' where \deqn{decline\_factor = (current\_volume - 14) / (max\_volume - 14)}.
-#'
-#' The starting rate for the growth calculation is determined by the proportion of HW and SW volumes and their respective
-#' starting rates, with default values of 0.45 for SW and 0.40 for HW. The final growth rate is constrained between
-#' the minimum rate and the calculated start rate.
-#'
-#' @param hw_volume Numeric, the current volume of hardwood (e.g., cords/acre).
-#' @param sw_volume Numeric, the current volume of softwood (e.g., cords/acre).
-#' @param sw_max_rate Numeric, the initial growth rate for softwood, default is 0.45.
-#' @param hw_max_rate Numeric, the initial growth rate for hardwood, default is 0.40.
-#' @param min_rate Numeric, the minimum growth rate when the combined volume reaches or exceeds the maximum, default is 0.02.
-#' @param maxvol Numeric, optional argument that defines the maximum allowable volume, default is 38 cords.
-#'
-#' @family Growth and Yield Functions
-#'
-#' @return Numeric, the calculated growth rate based on the combined HW and SW volumes and the calculated maximum volume from \code{\link{calculate_max_volume}}.
-#' The result is constrained between the `min_rate` and the combined `start_rate`.
-#'
-#' @seealso \code{\link{calculate_max_volume}}
-#'
-#' @examples
-#' # Example 1: Current volume is less than but approaching max volume
-#' hw_volumes <- c(4, 7, 12, 17, 20)
-#' sw_volumes <- c(4, 7, 12, 17, 20)
-#' sapply(1:length(hw_volumes), function(i) calculate_growth_rate(hw_volumes[i], sw_volumes[i]))
-#'
-#' # Example 2: Current volume is greater than max volume
-#' calculate_growth_rate(24, 22)
-#'
-#' # Example 3: No Hardwood
-#' sw_volumes_no_hw <- c(14, 24, 34, 44)
-#' sapply(sw_volumes_no_hw, function(sw) calculate_growth_rate(0, sw))
-#'
-#' # Example 4: No Softwood
-#' hw_volumes_no_sw <- c(14, 24, 34, 44)
-#' sapply(hw_volumes_no_sw, function(hw) calculate_growth_rate(hw, 0))
-#'
-#' @export
+#’ Calculate Growth Rate by Township
+#’
+#’ @description
+#’ `calculate_growth_rate()` computes a non‐linear, power‐law declining annual growth
+#’ rate for a stand, using its township code to select case‐specific parameters.
+#’ The curve declines from a user‐specified base volume up to a biological maximum.
+#’
+#’ @details
+#’ Internally, each township is mapped to one of four “cases” (SP, RY, AE, AW),
+#’ each with its own softwood start rate, hardwood start rate, exponent \(p\)
+#’ and minimum floor rate.  The function:
+#’ 1. Splits total volume into HW and SW components.
+#’ 2. Computes the biological max via \code{\link{calculate_max_volume}}.
+#’ 3. Normalizes a “decline factor” from \code{base_vol} to \code{maxvol}.
+#’ 4. Applies a power‐law:
+#’   \deqn{rate = start\_rate - (start\_rate - min\_rate) \times decline\_factor^p,}
+#’   enforcing \(\mathrm{rate} \ge \mathrm{min\_rate}\).
+#’
+#’ @param township  Character.  The stand’s township code (e.g. "T10R9", "Davis").
+#’ @param hw_volume Numeric.  Hardwood volume in cords/acre.
+#’ @param sw_volume Numeric.  Softwood volume in cords/acre.
+#’ @param base_vol   Numeric.  Volume (cords/acre) below which no decline applies. Default: 6.
+#’ @param maxvol     Numeric.  Biological maximum volume for decline calculation. Default: 38.
+#’
+#’ @return Numeric.  The predicted annual growth rate (cords/acre/yr), constrained between
+#’ the case‐specific minimum floor and the weighted start rate.
+#’
+#’ @family Growth and Yield Functions
+#’ @seealso \code{\link{calculate_max_volume}}, \code{\link{assign_spa_unit}}
+#’
+#’ @examples
+#’ # pure softwood in RY township:
+#’ calculate_growth_rate("Davis", hw_volume =  5, sw_volume = 25)
+#’
+#’ # mixed stand in SP township, below base_vol (no decline):
+#’ calculate_growth_rate("T10R15", hw_volume =  1, sw_volume =  4)
+#’
+#’ # at or above maxvol → floor applies:
+#’ calculate_growth_rate("Upton", hw_volume = 30, sw_volume = 10)
+#’
+#’ @export
+calculate_growth_rate <- function(township = 'T13R5',
+                                  hw_volume,
+                                  sw_volume,
+                                  base_vol = 6,
+                                  maxvol   = 38) {
 
+  # parameter lookup table
+  param_tbl <- tibble::tribble(
+    ~case, ~sw_start, ~hw_start, ~p,    ~min_rate,
+    "SP",   0.55,      0.48,      1.85,  0.25,
+    "RY",   0.62,      0.54,      1.45,  0.25,
+    "AE",   0.57,      0.51,      1.60,  0.25,
+    "AW",   0.57,      0.51,      1.60,  0.25
+  )
 
-# Function to calculate the non-linear declining growth rate
-calculate_growth_rate <- function(hw_volume, sw_volume, sw_max_rate = .45, hw_max_rate = .40, min_rate = .02, maxvol = 38) {
-
-   if((hw_volume + sw_volume) <= 0){
-    hw_volume = .01
-    sw_volume = .01
-  } else {
-    hw_volume = hw_volume
-    sw_volume = sw_volume
+  # map township → case
+  unit <- assign_spa_unit(township)
+  if (is.na(unit)) {
+   unit <- 'AE'
   }
 
-  percent_sw <- sw_volume / (hw_volume + sw_volume)
-  percent_hw <- hw_volume / (hw_volume + sw_volume)
-  sw_start_rate <- sw_max_rate * percent_sw
-  hw_start_rate <- hw_max_rate * percent_hw
-  start_rate <- sw_start_rate + hw_start_rate
-  current_volume <- hw_volume + sw_volume
-  max_volume <- calculate_max_volume(hw_volume = hw_volume, sw_volume = sw_volume, maxvol = maxvol)
+  # extract parameters
+  params   <- param_tbl[param_tbl$case == unit, ]
+  sw_start <- params$sw_start
+  hw_start <- params$hw_start
+  p_exp    <- params$p
+  min_rate <- params$min_rate
 
-  if (current_volume >= max_volume) {
+  # total volume safeguard
+  total_vol <- hw_volume + sw_volume
+  if (total_vol <= 0) {
+    hw_volume <- sw_volume <- 0.01
+    total_vol <- 0.02
+  }
+
+  # biological max
+  max_volume <- calculate_max_volume(hw_volume, sw_volume, maxvol = maxvol)
+
+  # if at/above max, return floor
+  if (total_vol >= max_volume) {
     return(min_rate)
-  } else if (max_volume <= 14) {
-    stop("max_volume must be greater than 14 to avoid division by zero")
-  } else {
-    # Non-linear interpolation: quadratic decline example
-    decline_factor <- pmax(0,(current_volume - 14) / (max_volume - 14))
-    rate <- start_rate - (start_rate - min_rate) * (decline_factor^2)
-    result <- round(max(rate, min_rate),3)
-    return(result)
   }
+
+  # decline fraction
+  decline_fac <- pmax(0, (total_vol - base_vol)/(max_volume - base_vol))
+
+  # weighted start rate
+  frac_sw    <- sw_volume / total_vol
+  frac_hw    <- hw_volume / total_vol
+  start_rate <- sw_start*frac_sw + hw_start*frac_hw
+
+  # power‐law decline
+  rate <- start_rate - (start_rate - min_rate)*decline_fac^p_exp
+
+  # enforce floor
+  max(rate, min_rate)
 }
+

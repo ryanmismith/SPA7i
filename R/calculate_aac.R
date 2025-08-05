@@ -155,10 +155,11 @@
 
 
 # Function to calculate the Annual Allowable Cut (AAC)
-calculate_aac <- function(hw_volume, sw_volume, aac_percentage, min_stocking = 12,
+calculate_aac <- function(township = 'T13R5',
+                          hw_volume, sw_volume, aac_percentage, min_stocking = 12,
                           max_harvest = FALSE, min_aac = TRUE,
                           sw_max_rate = .45, hw_max_rate = .40,
-                          min_rate = .02, maxvol = 38) {
+                          min_rate = .25, maxvol = 38) {
   total_volume <- hw_volume + sw_volume
 
   # Ensure no zero or negative volumes
@@ -168,9 +169,11 @@ calculate_aac <- function(hw_volume, sw_volume, aac_percentage, min_stocking = 1
   }
 
   # Calculate HW and SW growth rates using calculate_growth_rate function
-  growth_rate <- calculate_growth_rate(hw_volume = hw_volume, sw_volume = sw_volume,
-                                       sw_max_rate = sw_max_rate, hw_max_rate = hw_max_rate,
-                                       min_rate = min_rate, maxvol = maxvol)
+  growth_rate <- calculate_growth_rate(township = township,
+                                       hw_volume = hw_volume,
+                                       sw_volume = sw_volume,
+                                       base_vol = 6,
+                                       maxvol = maxvol)
 
   # Calculate the ratio of HW and SW based on the total volume
   hw_ratio <- if (hw_volume == 0) 0 else hw_volume / total_volume

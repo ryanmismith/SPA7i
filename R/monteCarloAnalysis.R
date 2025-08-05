@@ -68,7 +68,7 @@
 
 monteCarloAnalysis <- function(
     Flow, Occurrence, NominalRate, TerminalYear, FutureValue, Exit = FALSE,
-    NumSimulations = 1000, Seed = 123, SD_Flow = 0.2, SD_Discount = 0, SD_FutureValue = 0.2
+    NumSimulations = 5000, Seed = 123, SD_Flow = 0.2, SD_Discount = 0, SD_FutureValue = 0.2
 ) {
   # Ensure Flow and Occurrence have the same length
   if (length(Flow) != length(Occurrence)) {
@@ -125,9 +125,9 @@ monteCarloAnalysis <- function(
   } else {
     # Data is not normally distributed, use non-parametric quantile-based confidence intervals
 
-    CI_68 <- quantile(npv_values, c(0.16, 0.84))
-    CI_80 <- quantile(npv_values, c(0.10, 0.90))
-    CI_90 <- quantile(npv_values, c(0.05, 0.95))
+    CI_68 <- quantile(NPVs, c(0.16, 0.84))
+    CI_80 <- quantile(NPVs, c(0.10, 0.90))
+    CI_90 <- quantile(NPVs, c(0.05, 0.95))
   }
 
   # Return a list containing all NPVs and confidence intervals
