@@ -5,6 +5,7 @@
 \title{Calculate Annual Allowable Cut (AAC)}
 \usage{
 calculate_aac(
+  township = "T13R5",
   hw_volume,
   sw_volume,
   aac_percentage,
@@ -13,7 +14,7 @@ calculate_aac(
   min_aac = TRUE,
   sw_max_rate = 0.45,
   hw_max_rate = 0.4,
-  min_rate = 0.02,
+  min_rate = 0.25,
   maxvol = 38
 )
 }

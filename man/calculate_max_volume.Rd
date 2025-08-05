@@ -76,9 +76,6 @@ print(volumes_df2)
 }
 \seealso{
 \code{\link{calculate_growth_rate}}
-
-Other Growth and Yield Functions: 
-\code{\link{calculate_growth_rate}()}
 }
 \author{
 Ryan Smith

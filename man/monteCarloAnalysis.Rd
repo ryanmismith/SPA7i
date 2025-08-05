@@ -11,7 +11,7 @@ monteCarloAnalysis(
   TerminalYear,
   FutureValue,
   Exit = FALSE,
-  NumSimulations = 1000,
+  NumSimulations = 5000,
   Seed = 123,
   SD_Flow = 0.2,
   SD_Discount = 0,

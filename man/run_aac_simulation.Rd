@@ -5,6 +5,7 @@
 \title{Simulate Annual Allowable Cut (AAC) growth over multiple years.}
 \usage{
 run_aac_simulation(
+  township = "T13R5",
   hw_volume,
   sw_volume,
   aac_percentage,
