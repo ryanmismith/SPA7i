@@ -46,13 +46,12 @@ calculate_growth_rate <- function(township = 'T13R5',
                                   base_vol = 6,
                                   maxvol   = 38) {
 
-  # parameter lookup table
   param_tbl <- tibble::tribble(
     ~case, ~sw_start, ~hw_start, ~p,    ~min_rate,
-    "SP",   0.55,      0.48,      1.85,  0.25,
-    "RY",   0.62,      0.54,      1.45,  0.25,
-    "AE",   0.57,      0.51,      1.60,  0.25,
-    "AW",   0.57,      0.51,      1.60,  0.25
+    "SP",   0.45,      0.40,      1.20,  0.30,
+    "RY",   0.53,      0.44,      1.52,  0.30,
+    "AE",   0.49,      0.42,      1.36,  0.30,
+    "AW",   0.49,      0.42,      1.36,  0.30
   )
 
   # map township → case
