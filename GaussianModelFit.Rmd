@@ -1,0 +1,230 @@
+---
+title: "gaussian model"
+author: "Ryan Smith"
+date: "`r Sys.Date()`"
+output: pdf_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+---
+title: "Growth and Yield Model – Gaussian Form with Tempered Peaks"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    df_print: paged
+---
+
+```{r setup, include=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(tibble)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+```
+
+## Growth and Yield Model Form
+
+### Context & Data
+
+-   **Source:** SILC strategic planning dataset (periodic grow-only
+    yield tables).
+-   **Growth metric:** Annualized yield, filtered to:
+    -   Total volume: 3--48 cords/acre
+    -   Growth: 0.25--0.75 cords/acre/year (to exclude outliers)
+-   **Species groups:**
+    -   Hardwood (HW): H, HS
+    -   Softwood (SW): S, SH, OS, C
+
+------------------------------------------------------------------------
+
+### Model Form: Gaussian Growth Curve
+
+We use a **species-specific Gaussian model** to estimate growth as a
+function of current volume:
+
+$$
+\text{growth}_w(V_w) = a_w \cdot \exp\left(-\frac{1}{2} \left(\frac{V_w - \mu_w}{\sigma_w}\right)^2\right)
+$$
+
+Where: - $V_w$: volume of wood type $w$ - $a_w$: peak growth rate -
+$\mu_w$: volume at which peak occurs - $\sigma_w$: spread controlling
+the decline from the peak
+
+Total growth is computed as a weighted average:
+
+$$
+\text{growth}_{\text{total}} = \frac{V_{\mathrm{HW}}}{V} \cdot \text{growth}_{\mathrm{HW}} + \frac{V_{\mathrm{SW}}}{V} \cdot \text{growth}_{\mathrm{SW}}, \quad V = V_{\mathrm{HW}} + V_{\mathrm{SW}}
+$$
+
+------------------------------------------------------------------------
+
+### Fitted Parameters (Original, Unadjusted)
+
+```{r original-params}
+original_tbl <- tribble(
+  ~unit, ~wood, ~a, ~mu, ~sigma,
+  "RY", "HW", 0.552, 27.3, 22.3,
+  "RY", "SW", 0.629, 29.1, 20.2,
+  "SP", "HW", 0.554, 29.5, 25.0,
+  "SP", "SW", 0.583, 25.5, 22.0,
+  "AE", "HW", 0.553, 28.4, 23.7,
+  "AE", "SW", 0.606, 27.5, 21.1,
+  "AW", "HW", 0.553, 28.4, 23.7,
+  "AW", "SW", 0.606, 27.5, 21.1
+)
+knitr::kable(original_tbl, digits = 3, caption = "Original Gaussian Parameters (Unadjusted)")
+```
+
+------------------------------------------------------------------------
+
+### Tempered Parameters (90% of Original Peak)
+
+Although the original model fits had strong empirical performance, the
+peak `a` values exceeded known growth limits for similar stand types in
+Maine. A uniform **0.9 scaling** was applied to all peak values $a$ to
+temper projections while preserving shape and relative differences
+across species and site types.
+
+```{r tempered-params}
+tempered_tbl <- original_tbl %>%
+  mutate(a = a * 0.9)
+knitr::kable(tempered_tbl, digits = 3, caption = "Tempered Gaussian Parameters (Peak a × 0.9)")
+```
+
+------------------------------------------------------------------------
+
+## Visual Comparison of Growth Curves
+
+```{r plot-growth-curves}
+# Prepare curve data
+gaussian <- function(vol, a, mu, sigma) {
+  a * exp(-0.5 * ((vol - mu) / sigma)^2)
+}
+
+vol <- seq(0, 60, length.out = 200)
+
+make_curve_data <- function(tbl, label) {
+  expand.grid(volume = vol, unit = unique(tbl$unit), wood = c("HW", "SW")) %>%
+    left_join(tbl, by = c("unit", "wood")) %>%
+    mutate(
+      model = label,
+      growth = gaussian(volume, a, mu, sigma),
+      linetype = ifelse(model == "Tempered", "solid", "dashed")
+    )
+}
+
+original_data <- make_curve_data(original_tbl, "Original")
+tempered_data <- make_curve_data(tempered_tbl, "Tempered")
+plot_df <- bind_rows(original_data, tempered_data)
+
+# Final plot
+ggplot(plot_df, aes(x = volume, y = growth, color = wood, linetype = linetype)) +
+  geom_line(size = 1) +
+  facet_wrap(~unit) +
+  scale_linetype_identity() +
+  labs(
+    title = "Tempered vs Original Gaussian Growth Curves",
+    subtitle = "Solid = Tempered, Dashed = Original",
+    x = "Volume (cords/acre)",
+    y = "Predicted Growth (cords/acre/year)",
+    color = "Wood Type"
+  ) +
+  theme_minimal()
+```
+
+------------------------------------------------------------------------
+
+## Justification for Tempering
+
+The original fitted curves estimated peak softwood growth rates in
+excess of **0.65 cords/acre/year**, which was deemed inconsistent with
+field observations and long-term plot trends across Maine.
+
+The revised curves:
+
+-   Retain the empirical form and relative differences.
+-   Reduce over-optimism in high-productivity scenarios.
+-   Improve alignment with stand-level outcomes for both inventory and
+    planning use.
+
+This tempering reflects a **judicious compromise** between statistical
+fit and field-informed expectation, and is now the preferred default
+growth projection model for SPA.
+
+------------------------------------------------------------------------
+
+## Fit Statistics and Growth Model Performance Summary
+
+Three models were compared for estimating annual forest growth
+(cords/ac/yr) using stand volume and composition:
+
+-   **Tempered Gaussian Model** (adjusted with a 0.9 scaling factor on
+    the SW curve)
+-   **Power-Law Decline Model**
+-   **Untempered Gaussian Model** (original fitted curves from RY and
+    SP)
+
+The tempered Gaussian model is currently in use.
+
+------------------------------------------------------------------------
+
+### Overall Diagnostics
+
+| Model      | RMSE  | MAE   | Skew    | Notes                                                      |
+|------------|-------|-------|---------|------------------------------------------------------------|
+| Gaussian   | 0.186 | 0.151 | --0.163 | Well-calibrated, low error, slight right-tail conservatism |
+| Power      | 0.249 | 0.207 | --0.266 | Broad overprediction in middle volumes                     |
+| Untempered | 0.184 | 0.148 | --0.139 | Slightly lower error but more optimistic overall           |
+
+**Interpretation**:\
+The tempered Gaussian maintains nearly equivalent accuracy to the
+untempered model while showing improved control over right-tail behavior
+and more conservative estimates in well-stocked stands. The power model
+showed uniformly higher error and greater skewness.
+
+------------------------------------------------------------------------
+
+## Residual Performance by Volume Class
+
+To evaluate calibration across the range of observed stand volumes,
+residuals were grouped into three volume classes:
+
+| Model      | Volume Class | RMSE  | MAE   | Skew    | Interpretation                                    |
+|------------|--------------|-------|-------|---------|---------------------------------------------------|
+| Gaussian   | \<15 cords   | 0.190 | 0.151 | +0.623  | Mild underprediction in sparse stands             |
+| Gaussian   | 15--28 cords | 0.205 | 0.166 | --0.487 | Moderate overprediction in mid-range              |
+| Gaussian   | \>28 cords   | 0.180 | 0.147 | --0.192 | Modest overprediction in high-volume stands       |
+| Power      | \<15 cords   | 0.213 | 0.180 | +0.628  | Broad underprediction in sparse stands            |
+| Power      | 15--28 cords | 0.256 | 0.216 | --0.452 | Largest overprediction and highest error          |
+| Power      | \>28 cords   | 0.251 | 0.208 | --0.095 | Still overpredicting, with high spread            |
+| Untempered | \<15 cords   | 0.190 | 0.160 | +0.629  | Similar pattern to tempered, slightly higher bias |
+| Untempered | 15--28 cords | 0.199 | 0.159 | --0.492 | Slightly better fit, more aggressive curve        |
+| Untempered | \>28 cords   | 0.178 | 0.142 | --0.172 | More optimistic in high-productivity cases        |
+
+------------------------------------------------------------------------
+
+### Model Behavior Notes
+
+-   The **tempered Gaussian** reduces the peak of the softwood curve by
+    10%, narrowing the gap between original RY and SP fits. This scaling
+    improves conservatism in high-volume, SW-dominated stands without
+    materially degrading fit quality.
+-   Residual skewness is moderate and directionally consistent with a
+    conservative adjustment --- slightly negative in high and mid-volume
+    classes, slightly positive in low-volume cases.
+-   The model avoids the risk of compounding error from overestimated
+    growth in already well-stocked stands, a critical concern in
+    long-term simulations and harvest scheduling.
+-   The **power-law** model underperformed in all volume classes and
+    showed more volatility in residual distribution, despite strong
+    theoretical appeal for asymptotic growth decline.
+-   The **untempered** model offers marginally lower RMSE/MAE, but at
+    the cost of slightly more optimistic predictions. Its right tail is
+    less constrained, particularly in softwood-heavy stands near or
+    above peak growth.
+
+------------------------------------------------------------------------

@@ -128,19 +128,23 @@ long_df <- long_df %>%
   mutate(
     total_vol = volume,
     growth    = volume - lag(volume),
-    interval  = year - lag(year),
+    interval  = 5,
     growth_yr = growth / interval
   ) %>%
   ungroup() %>%
   filter(!is.na(growth_yr),
          is.finite(growth_yr),
          interval > 0) %>%
-  filter(total_vol >= 3, total_vol <= 48,   # requested volume window
-         growth_yr >= 0.25, growth_yr < .75) %>% # drop negatives and big outliers
+  filter(total_vol >= 2, total_vol <= 45,   # requested volume window
+         growth_yr >= 0.01, growth_yr < .95) %>% # drop negatives and big outliers
   mutate(
     decline_raw = compute_decline(total_vol, wood, base_vol, maxvol),
     isHW        = as.numeric(wood == "HW")
   )
+
+ggplot(data = long_df, aes(total_vol, growth_yr, color = unit)) +
+  geom_point() +
+  geom_smooth(method = 'loess')
 
 # Quick sanity check
 print(table(long_df$unit, long_df$wood))
@@ -484,3 +488,183 @@ p6 <- ggplot(dfp, aes(total_vol, resid, color = wood)) +
   theme_minimal(base_size = 13)
 print(p6)
 
+# QUADRATIC AND GAUSSIAN FUNCTIONS
+
+models_by_wood <- long_df |>
+  group_by(wood) |>
+  group_map( ~ {
+    lm(growth_yr ~ total_vol + I(total_vol^2), data = .x)
+  })
+
+# Quadratic model
+fit_quadratic <- lm(growth_yr ~ total_vol + I(total_vol^2), data = long_df)
+
+# Gaussian model (nonlinear least squares)
+fit_gaussian <- nls(
+  growth_yr ~ a * exp(-((total_vol - mu)^2) / (2 * sigma^2)),
+  data = long_df,
+  start = list(a = 0.6, mu = 25, sigma = 10)
+)
+
+# Power-law model (for comparison)
+fit_power <- nls(
+  growth_yr ~ s - (s - m) * (total_vol / max(total_vol))^p,
+  data = long_df,
+  start = list(s = 0.6, m = 0.2, p = 1.2)
+)
+
+par(mfrow = c(1, 3))  # 3 plots side-by-side
+
+plot(residuals(fit_quadratic) ~ long_df$total_vol, main = "Quadratic Residuals")
+abline(h = 0, col = "red")
+
+plot(residuals(fit_gaussian) ~ long_df$total_vol, main = "Gaussian Residuals")
+abline(h = 0, col = "red")
+
+plot(residuals(fit_power) ~ long_df$total_vol, main = "Power-Law Residuals")
+abline(h = 0, col = "red")
+
+
+library(tidyverse)
+
+# Define the Gaussian fitting function
+fit_gaussian_model <- function(df) {
+  tryCatch(
+    nls(
+      growth_yr ~ a * exp(-((total_vol - mu)^2) / (2 * sigma^2)),
+      data = df,
+      start = list(a = 0.6, mu = 25, sigma = 10),
+      control = nls.control(maxiter = 100)
+    ),
+    error = function(e) return(NULL)
+  )
+}
+
+# Nest by unit and wood
+model_fits <- long_df %>%
+  group_by(unit, wood) %>%
+  nest() %>%
+  mutate(fit = map(data, fit_gaussian_model),
+          params = map(fit, ~ if (!is.null(.x)) coef(.x) else NA)) |>
+  unnest_wider(params, names_sep = "_")  # optional: split params into columns
+
+  library(broom)
+  library(tidyr)
+  library(dplyr)
+  library(purrr)
+
+  # Add predictions and residuals
+  model_fits <- model_fits %>%
+    mutate(
+      augmented = map2(fit, data, ~ if (!is.null(.x)) augment(.x, data = .y) else NULL)
+    )
+
+  predicted_data <- model_fits %>%
+    select(unit, wood, augmented) %>%
+    unnest(augmented)
+
+  # Plot predicted vs actual
+  ggplot(predicted_data, aes(x = .fitted, y = growth_yr)) +
+    geom_point(alpha = 0.4) +
+    geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+    facet_grid(unit ~ wood) +
+    labs(title = "Predicted vs Observed Growth",
+         x = "Predicted", y = "Observed") +
+    theme_minimal()
+
+  # Residuals by volume
+  ggplot(predicted_data, aes(x = total_vol, y = .resid)) +
+    geom_point(alpha = 0.4) +
+    geom_smooth(se = FALSE, method = "loess") +
+    facet_grid(unit ~ wood) +
+    labs(title = "Residuals vs Total Volume",
+         y = "Residuals", x = "Total Volume") +
+    theme_minimal()
+
+
+  model_fits <- model_fits %>%
+    mutate(
+      rmse = map_dbl(augmented, ~ if (!is.null(.x)) sqrt(mean((.x$.resid)^2)) else NA),
+      mae  = map_dbl(augmented, ~ if (!is.null(.x)) mean(abs(.x$.resid)) else NA)
+    )
+  model_fits
+
+
+  library(dplyr)
+  library(tidyr)
+  library(purrr)
+
+  # Define range of total volume and township list
+  vol_range <- 0:60
+  townships <- c("Davis", "T13R5", "T15R13")
+
+  # Generate all hw/sw combinations per total volume
+  volume_grid <- map_dfr(vol_range, function(total_vol) {
+    tibble(hw_volume = 0:total_vol, sw_volume = total_vol - hw_volume, total_volume = total_vol)
+  })
+
+  # Cross with townships
+  input_grid <- crossing(township = townships, volume_grid)
+
+  # Calculate growth using both functions
+  output <- input_grid %>%
+    rowwise() %>%
+    mutate(
+      rate_power = calculate_growth_rate(township, hw_volume, sw_volume),
+      rate_gauss = calculate_growth_rate2(township, hw_volume, sw_volume)
+    ) %>%
+    ungroup()
+
+  # Preview result
+  print(head(output))
+
+  # Pivot longer for plotting
+  growth_long <- output %>%
+    pivot_longer(cols = c(rate_power, rate_gauss),
+                 names_to = "model", values_to = "growth_rate")
+
+  # Plot
+  ggplot(growth_long, aes(x = total_volume, y = growth_rate, color = model)) +
+    geom_line(alpha = 0.7) +
+    facet_wrap(~township, scales = "free_y") +
+    labs(
+      title = "Growth Rate Comparison by Model and Township",
+      x = "Total Volume (cords/acre)",
+      y = "Annual Growth Rate (cords/acre/year)",
+      color = "Model"
+    ) +
+    theme_minimal()
+
+  growth_summary <- output %>%
+    group_by(township, total_volume) %>%
+    summarise(
+      mean_power = mean(rate_power, na.rm = TRUE),
+      mean_gauss = mean(rate_gauss, na.rm = TRUE),
+      diff = mean_gauss - mean_power,
+      pct_diff = 100 * (mean_gauss - mean_power) / mean_power
+    ) %>%
+    ungroup()
+
+  summary(growth_summary$pct_diff)
+
+
+  # Filter for the 12–22 cord range
+  focused_df <- growth_long %>%
+    filter(total_volume >= 35, total_volume <= 55)
+
+  # Summarize average and difference per model and township
+  summary_table <- focused_df %>%
+    pivot_wider(names_from = model, values_from = growth_rate) %>%
+    mutate(
+      diff = rate_gauss - rate_power,
+      pct_diff = 100 * (rate_gauss - rate_power) / rate_power
+    ) %>%
+    group_by(township) %>%
+    summarise(
+      avg_power = mean(rate_power, na.rm = TRUE),
+      avg_gauss = mean(rate_gauss, na.rm = TRUE),
+      mean_diff = mean(diff, na.rm = TRUE),
+      mean_pct_diff = mean(pct_diff, na.rm = TRUE)
+    )
+
+  print(summary_table)

@@ -40,7 +40,7 @@
 #'
 #' @export
 
-calculate_growth_rate <- function(township = 'T13R5',
+calculate_growth_rate_power <- function(township = 'T13R5',
                                   hw_volume,
                                   sw_volume,
                                   base_vol = 6,
