@@ -4,10 +4,16 @@
 \alias{calculate_growth_rate}
 \title{Calculate Gaussian-Based Growth Rate by Township}
 \usage{
-calculate_growth_rate(township = "T13R5", hw_volume, sw_volume)
+calculate_growth_rate(
+  township = "T13R5",
+  hw_volume,
+  sw_volume,
+  base_vol = 6,
+  maxvol = 38
+)
 }
 \arguments{
-\item{township}{Character. The stand's township code (e.g., `"T13R5"`, `"Davis"`). 
+\item{township}{Character. The stand's township code (e.g., `"T13R5"`, `"Davis"`).
 Used to assign the growth curve parameters via \code{\link{assign_spa_unit}}.}
 
 \item{hw_volume}{Numeric. Hardwood volume in cords/acre.}
@@ -15,12 +21,12 @@ Used to assign the growth curve parameters via \code{\link{assign_spa_unit}}.}
 \item{sw_volume}{Numeric. Softwood volume in cords/acre.}
 }
 \value{
-Numeric. Predicted annual growth rate (cords/acre/year), calculated 
+Numeric. Predicted annual growth rate (cords/acre/year), calculated
 as the weighted mean of hardwood and softwood Gaussian growth curves.
 }
 \description{
-`calculate_growth_gaussian()` estimates annual stand-level growth using a 
-species-specific Gaussian model. Each township is mapped to a case unit 
+`calculate_growth_gaussian()` estimates annual stand-level growth using a
+species-specific Gaussian model. Each township is mapped to a case unit
 (SP, RY, AE, AW), which determines the hardwood and softwood growth curve parameters.
 }
 \details{
@@ -35,29 +41,29 @@ where:
 - \( \mu \) is the volume at which peak growth occurs, and
 - \( \sigma \) controls the spread of the growth curve.
 
-The final growth rate is the weighted average of hardwood and softwood growth, 
+The final growth rate is the weighted average of hardwood and softwood growth,
 based on their proportion of total volume:
 
 \deqn{
-\text{growth}_\text{total} = 
-\frac{V_{\mathrm{HW}}}{V} \cdot G_{\mathrm{HW}} + 
+\text{growth}_\text{total} =
+\frac{V_{\mathrm{HW}}}{V} \cdot G_{\mathrm{HW}} +
 \frac{V_{\mathrm{SW}}}{V} \cdot G_{\mathrm{SW}}
 }
 
-Parameters are derived from nonlinear least squares fits to empirical data 
+Parameters are derived from nonlinear least squares fits to empirical data
 and then scaled (a × 0.9) to temper model optimism based on field observations.
 
 If total volume is zero or negative, the function returns 0.
 }
 \examples{
 # Pure softwood stand in high-productivity township
-calculate_growth_gaussian("T13R5", hw_volume = 0, sw_volume = 30)
+calculate_growth_rate("T13R5", hw_volume = 0, sw_volume = 30)
 
 # Mixed stand with moderate volumes
-calculate_growth_gaussian("Davis", hw_volume = 10, sw_volume = 10)
+calculate_growth_rate("Davis", hw_volume = 10, sw_volume = 10)
 
 # Edge case: no volume
-calculate_growth_gaussian("T15R13", hw_volume = 0, sw_volume = 0)
+calculate_growth_rate("T15R13", hw_volume = 0, sw_volume = 0)
 
 }
 \seealso{
