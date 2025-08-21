@@ -2,7 +2,7 @@
 % Please edit documentation in R/calculate_growth_gaussian.R
 \name{calculate_growth_rate}
 \alias{calculate_growth_rate}
-\title{Calculate Gaussian-Based Growth Rate by Township}
+\title{Calculate Growth Rate by Township (Gaussian-Based)}
 \usage{
 calculate_growth_rate(
   township = "T13R5",
@@ -25,7 +25,7 @@ Numeric. Predicted annual growth rate (cords/acre/year), calculated
 as the weighted mean of hardwood and softwood Gaussian growth curves.
 }
 \description{
-`calculate_growth_gaussian()` estimates annual stand-level growth using a
+`calculate_growth_rate()` estimates annual stand-level growth using a
 species-specific Gaussian model. Each township is mapped to a case unit
 (SP, RY, AE, AW), which determines the hardwood and softwood growth curve parameters.
 }

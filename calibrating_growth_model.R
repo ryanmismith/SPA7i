@@ -588,7 +588,22 @@ model_fits <- long_df %>%
       mae  = map_dbl(augmented, ~ if (!is.null(.x)) mean(abs(.x$.resid)) else NA)
     )
   model_fits
+  # >   model_fits - UNTAMPERED
+  # # A tibble: 4 × 10
+  # # Groups:   unit, wood [4]
+  # unit  wood  data               fit    params_a params_mu params_sigma augmented            rmse   mae
+  # <chr> <fct> <list>             <list>    <dbl>     <dbl>        <dbl> <list>              <dbl> <dbl>
+  #   1 RY    HW    <tibble [315 × 9]> <nls>     0.532      28.3         22.6 <tibble [315 × 11]> 0.166 0.133
+  # 2 RY    SW    <tibble [263 × 9]> <nls>     0.620      29.4         20.4 <tibble [263 × 11]> 0.192 0.162
+  # 3 SP    HW    <tibble [170 × 9]> <nls>     0.537      32.0         24.5 <tibble [170 × 11]> 0.161 0.128
+  # 4 SP    SW    <tibble [268 × 9]> <nls>     0.580      26.5         21.5 <tibble [268 × 11]> 0.206 0.172
 
+  Adjusted_90_Model_Fits <-
+    model_fits |> mutate(
+      params_a = params_a*.9
+    )
+
+  Adjusted_90_Model_Fits
 
   library(dplyr)
   library(tidyr)

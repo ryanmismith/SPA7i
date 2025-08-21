@@ -53,62 +53,64 @@
 #' @export
 
 run_aac_simulation <- function(township = 'T13R5',
-                               hw_volume, sw_volume, aac_percentage, min_stocking,
-                               max_harvest = FALSE, min_aac = TRUE, years = 20) {
-  # results <- data.frame(Year = numeric(), HW_Volume = numeric(), SW_Volume = numeric(),
-  #                       Total_Volume = numeric(), HW_AAC = numeric(), SW_AAC = numeric(),
-  #                       Total_AAC = numeric(), total_growth = numeric(),
-  #                       hw_growth = numeric(), sw_growth = numeric())
+                               hw_volume, sw_volume,
+                               aac_percentage, min_stocking,
+                               max_harvest = FALSE, min_aac = TRUE,
+                               years = 20) {
 
-  maxVol <- numeric()
   maxVol <- calculate_max_volume(hw_volume, sw_volume)
-
   total_volume <- hw_volume + sw_volume
 
   results <- data.frame(
-    Year = 0,  # Year 0 for initial state
-    HW_Volume = hw_volume,
-    SW_Volume = sw_volume,
+    Year         = 0,
+    HW_Volume    = hw_volume,
+    SW_Volume    = sw_volume,
     Total_Volume = total_volume,
-    HW_AAC = NA,  # No AAC applied in year 0
-    SW_AAC = NA,  # No AAC applied in year 0
-    Total_AAC = NA,  # No AAC applied in year 0
-    total_growth = NA,  # No growth in year 0
-    hw_growth = NA,  # No growth in year 0
-    sw_growth = NA   # No growth in year 0
+    HW_AAC       = NA_real_,
+    SW_AAC       = NA_real_,
+    Total_AAC    = NA_real_,
+    total_growth = NA_real_,
+    hw_growth    = NA_real_,
+    sw_growth    = NA_real_
   )
 
   for (year in 1:years) {
-    # Calculate AAC for the year
-    aac_result <- calculate_aac(township = township,
-                                hw_volume, sw_volume, aac_percentage, min_stocking,
-                                max_harvest, min_aac, maxvol = maxVol)
+    # One-time max harvest in period 1 only
+    apply_max_harvest <- isTRUE(max_harvest) && year == 1
 
-    # Update volumes for next year, ensuring no negative or NaN volumes
-    hw_volume <- hw_volume + aac_result$hw_growth - aac_result$hw_aac
-    sw_volume <- sw_volume + aac_result$sw_growth - aac_result$sw_aac
+    aac_result <- calculate_aac(
+      township      = township,
+      hw_volume     = hw_volume,
+      sw_volume     = sw_volume,
+      aac_percentage = aac_percentage,
+      min_stocking  = min_stocking,
+      max_harvest   = apply_max_harvest,
+      min_aac       = min_aac,
+      maxvol        = maxVol
+    )
 
-    # Ensure volumes stay positive
-    hw_volume <- max(0, hw_volume)
-    sw_volume <- max(0, sw_volume)
-
-    # Recalculate total volume
+    # Update standing volumes
+    hw_volume <- max(0, hw_volume + aac_result$hw_growth - aac_result$hw_aac)
+    sw_volume <- max(0, sw_volume + aac_result$sw_growth - aac_result$sw_aac)
     total_volume <- hw_volume + sw_volume
 
-    # Store the results
-    results <- rbind(results, data.frame(
-      Year = year,
-      HW_Volume = hw_volume,
-      SW_Volume = sw_volume,
-      Total_Volume = total_volume,
-      HW_AAC = aac_result$hw_aac,
-      SW_AAC = aac_result$sw_aac,
-      Total_AAC = aac_result$hw_aac + aac_result$sw_aac,
-      total_growth = aac_result$growth_rate,
-      hw_growth = aac_result$hw_growth,
-      sw_growth = aac_result$sw_growth
-    ))
+    results <- rbind(
+      results,
+      data.frame(
+        Year         = year,
+        HW_Volume    = hw_volume,
+        SW_Volume    = sw_volume,
+        Total_Volume = total_volume,
+        HW_AAC       = aac_result$hw_aac,
+        SW_AAC       = aac_result$sw_aac,
+        Total_AAC    = aac_result$hw_aac + aac_result$sw_aac,
+        total_growth = aac_result$growth_rate,
+        hw_growth    = aac_result$hw_growth,
+        sw_growth    = aac_result$sw_growth
+      )
+    )
   }
+
   return(results)
 }
 

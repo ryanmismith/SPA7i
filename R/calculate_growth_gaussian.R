@@ -1,7 +1,7 @@
-#' Calculate Gaussian-Based Growth Rate by Township
+#' Calculate Growth Rate by Township (Gaussian-Based)
 #'
 #' @description
-#' `calculate_growth_gaussian()` estimates annual stand-level growth using a
+#' `calculate_growth_rate()` estimates annual stand-level growth using a
 #' species-specific Gaussian model. Each township is mapped to a case unit
 #' (SP, RY, AE, AW), which determines the hardwood and softwood growth curve parameters.
 #'
@@ -64,10 +64,10 @@ calculate_growth_rate <- function(township = 'T13R5',
   # Parameters per unit and species group
   param_tbl <- tibble::tribble(
     ~case, ~hw_a, ~hw_mu, ~hw_sigma, ~sw_a, ~sw_mu, ~sw_sigma,
-    "SP",  0.4986,  29.5,    24.5,      0.595,   25.5,    21.5,
-    "RY",  0.471,   27.3,    21.8,      0.5886,  29.1,    19.7,
-    "AE",  0.477,   28.4,    23.2,      0.5886,  27.5,    20.6,
-    "AW",  0.477,   28.4,    23.2,      0.5886,  27.5,    20.6
+    "SP",  0.483,  32.0,    22.6,      0.522,  26.5,    20.4,
+    "RY",  0.479,  28.3,    24.5,      0.558,  29.4,    21.5,
+    "AE",  0.481,  30.2,    23.6,      0.540,  28.0,    20.9,
+    "AW",  0.481,  30.2,    23.6,      0.540,  28.0,    20.9
   )
 
   # map township → case
@@ -90,14 +90,15 @@ calculate_growth_rate <- function(township = 'T13R5',
     a * exp(-0.5 * ((vol - mu) / sigma)^2)
   }
 
-  # Compute growths
-  hw_growth <- gauss(hw_volume, params$hw_a, params$hw_mu, params$hw_sigma)
-  sw_growth <- gauss(sw_volume, params$sw_a, params$sw_mu, params$sw_sigma)
-
   # Weighted mean growth rate
   frac_hw <- hw_volume / total_vol
   frac_sw <- sw_volume / total_vol
 
-  return(hw_growth * frac_hw + sw_growth * frac_sw)
+  gh_tot <- gauss(total_vol, params$hw_a, params$hw_mu, params$hw_sigma)
+  gs_tot <- gauss(total_vol, params$sw_a, params$sw_mu, params$sw_sigma)
+
+  growth_total <- frac_hw * gh_tot + frac_sw * gs_tot
+
+  return(growth_total)
 }
 

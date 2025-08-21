@@ -156,68 +156,68 @@
 
 # Function to calculate the Annual Allowable Cut (AAC)
 calculate_aac <- function(township = 'T13R5',
-                          hw_volume, sw_volume, aac_percentage, min_stocking = 12,
+                          hw_volume, sw_volume,
+                          aac_percentage, min_stocking = 12,
                           max_harvest = FALSE, min_aac = TRUE,
                           sw_max_rate = .45, hw_max_rate = .40,
                           min_rate = .25, maxvol = 38) {
+
   total_volume <- hw_volume + sw_volume
 
-  # Ensure no zero or negative volumes
-  if ((hw_volume + sw_volume) <= 0) {
-    hw_volume = .01
-    sw_volume = .01
+  # Safeguard against zero or negative volumes for ratio math
+  if (total_volume <= 0) {
+    hw_volume <- 0.01
+    sw_volume <- 0.01
+    total_volume <- hw_volume + sw_volume
   }
 
-  # Calculate HW and SW growth rates using calculate_growth_rate function
-  growth_rate <- calculate_growth_rate(township = township,
-                                       hw_volume = hw_volume,
-                                       sw_volume = sw_volume,
-                                       base_vol = 6,
-                                       maxvol = maxvol)
-
-  # Calculate the ratio of HW and SW based on the total volume
-  hw_ratio <- if (hw_volume == 0) 0 else hw_volume / total_volume
-  sw_ratio <- if (sw_volume == 0) 0 else sw_volume / total_volume
-
-  # Prorate the growth rates by their respective volume ratios
-  prorated_hw_growth <- growth_rate * hw_ratio
-  prorated_sw_growth <- growth_rate * sw_ratio
-
-  # Total potential growth
+  # Stand growth (cords/ac/yr)
+  growth_rate <- calculate_growth_rate(
+    township = township,
+    hw_volume = hw_volume,
+    sw_volume = sw_volume,
+    base_vol  = 6,
+    maxvol    = maxvol
+  )
   total_growth <- growth_rate
 
-  # If max_harvest is TRUE, reduce total volume to min_stocking
-  if (max_harvest && total_volume > min_stocking) {
-    # Calculate total AAC to reduce volume to min_stocking
-    total_aac <- total_volume + total_growth - min_stocking
-    hw_aac <- total_aac * hw_ratio
-    sw_aac <- total_aac * sw_ratio
-  } else if (total_volume < min_stocking) {
-    # No AAC applied, just growth
-    hw_aac <- 0
-    sw_aac <- 0
-  } else if (total_growth < .25 && min_aac == TRUE) {
-    # No AAC applied, just growth
-    hw_aac <- .5 * hw_ratio
-    sw_aac <- .5 * sw_ratio
-  } else {
-    # Apply AAC based on the aac_percentage, but check if this cut brings the total volume below minimum
-    proposed_hw_aac <- (aac_percentage * total_growth) * hw_ratio
-    proposed_sw_aac <- (aac_percentage * total_growth) * sw_ratio
+  # Species shares (stable if one is zero)
+  hw_ratio <- if (hw_volume <= 0) 0 else hw_volume / total_volume
+  sw_ratio <- if (sw_volume <= 0) 0 else sw_volume / total_volume
 
-    # Check if the proposed cut brings the total volume below the minimum stocking
-    if ((total_volume - (proposed_hw_aac + proposed_sw_aac)) >= min_stocking) {
-      # We can cut at the desired AAC percentage
-      hw_aac <- proposed_hw_aac
-      sw_aac <- proposed_sw_aac
-    } else {
-      # Cut only the growth, since cutting at the full AAC would drop below minimum
-      hw_aac <- total_growth * hw_ratio  # 100% of the growth
-      sw_aac <- total_growth * sw_ratio  # 100% of the growth
-    }
+  # --- Policy: choose a desired total AAC for this period ---
+  desired_total_aac <- 0
+  if (isTRUE(max_harvest) && total_volume > min_stocking) {
+    # One-time heavy entry to min_stocking (uses this period's growth)
+    desired_total_aac <- total_volume + total_growth - min_stocking
+  } else if (isTRUE(min_aac) && total_growth < 0.25 && total_volume >= min_stocking) {
+    # Low-growth safeguard: target 0.5 cords/ac total AAC
+    desired_total_aac <- 0.5
+  } else if (total_volume >= min_stocking) {
+    # Normal case: percentage of growth
+    desired_total_aac <- aac_percentage * total_growth
+  } else {
+    # Below min_stocking: no AAC
+    desired_total_aac <- 0
   }
 
-  return(list(hw_aac = hw_aac, sw_aac = sw_aac,
-              growth_rate = total_growth,
-              hw_growth = prorated_hw_growth, sw_growth = prorated_sw_growth))
+  # --- Constraint: cap AAC so END-OF-PERIOD volume stays ≥ min_stocking ---
+  # End volume = total_volume + total_growth - total_aac
+  allowed_total_aac <- max(0, (total_volume + total_growth) - min_stocking)
+  total_aac <- min(desired_total_aac, allowed_total_aac)
+
+  # Split AAC and growth by species shares
+  hw_aac <- total_aac * hw_ratio
+  sw_aac <- total_aac * sw_ratio
+
+  prorated_hw_growth <- total_growth * hw_ratio
+  prorated_sw_growth <- total_growth * sw_ratio
+
+  return(list(
+    hw_aac      = hw_aac,
+    sw_aac      = sw_aac,
+    growth_rate = total_growth,
+    hw_growth   = prorated_hw_growth,
+    sw_growth   = prorated_sw_growth
+  ))
 }

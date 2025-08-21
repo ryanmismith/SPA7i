@@ -175,7 +175,7 @@ The tempered Gaussian model is currently in use.
 ### Overall Diagnostics
 
 | Model      | RMSE  | MAE   | Skew    | Notes                                                      |
-|------------|-------|-------|---------|------------------------------------------------------------|
+|----------|----------|----------|----------|-----------------------------------|
 | Gaussian   | 0.186 | 0.151 | --0.163 | Well-calibrated, low error, slight right-tail conservatism |
 | Power      | 0.249 | 0.207 | --0.266 | Broad overprediction in middle volumes                     |
 | Untempered | 0.184 | 0.148 | --0.139 | Slightly lower error but more optimistic overall           |
@@ -194,7 +194,7 @@ To evaluate calibration across the range of observed stand volumes,
 residuals were grouped into three volume classes:
 
 | Model      | Volume Class | RMSE  | MAE   | Skew    | Interpretation                                    |
-|------------|--------------|-------|-------|---------|---------------------------------------------------|
+|---------|---------|---------|---------|---------|--------------------------|
 | Gaussian   | \<15 cords   | 0.190 | 0.151 | +0.623  | Mild underprediction in sparse stands             |
 | Gaussian   | 15--28 cords | 0.205 | 0.166 | --0.487 | Moderate overprediction in mid-range              |
 | Gaussian   | \>28 cords   | 0.180 | 0.147 | --0.192 | Modest overprediction in high-volume stands       |

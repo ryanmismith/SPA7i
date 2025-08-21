@@ -1,7 +1,7 @@
-#' Calculate Growth Rate by Township
+#' Calculate Growth Rate by Township (Power Function)
 #'
 #' @description
-#' `calculate_growth_rate()` computes a non‐linear, power‐law declining annual growth
+#' `calculate_growth_rate_power()` computes a non‐linear, power‐law declining annual growth
 #' rate for a stand, using its township code to select case‐specific parameters.
 #' The curve declines from a user‐specified base volume up to a biological maximum.
 #'
@@ -30,13 +30,13 @@
 #'
 #' @examples
 #' # pure softwood in RY township:
-#' calculate_growth_rate("Davis", hw_volume =  5, sw_volume = 25)
+#' calculate_growth_rate_power("Davis", hw_volume =  5, sw_volume = 25)
 #'
 #' # mixed stand in SP township, below base_vol (no decline):
-#' calculate_growth_rate("T10R15", hw_volume =  1, sw_volume =  4)
+#' calculate_growth_rate_power("T10R15", hw_volume =  1, sw_volume =  4)
 #'
 #' # at or above maxvol → floor applies:
-#' calculate_growth_rate("Upton", hw_volume = 30, sw_volume = 10)
+#' calculate_growth_rate_power("Upton", hw_volume = 30, sw_volume = 10)
 #'
 #' @export
 

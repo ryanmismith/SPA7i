@@ -6,10 +6,10 @@ library(purrr)
 # Join fitted parameters (untempered) by unit and wood for the untempered Gaussian
 untampered_params <- tibble::tribble(
   ~unit, ~wood, ~a, ~mu, ~sigma,
-  "RY", "HW", 0.526, 29.5, 28.4,
-  "RY", "SW", 0.654, 31.2, 23.2,
-  "SP", "HW", 0.551, 29.1, 45.2,
-  "SP", "SW", 0.661, 25.9, 20.7
+  "RY", "HW", 0.532, 28.3, 22.6,
+  "RY", "SW", 0.620, 29.4, 20.4,
+  "SP", "HW", 0.537, 32.0, 24.5,
+  "SP", "SW", 0.580, 26.5, 21.5
 )
 
 # Gaussian helper
@@ -30,16 +30,16 @@ long_df_eval <- long_df %>%
 
 library(dplyr)
 library(tibble)
-
+library(SPA7i)
 # Assuming you have the original fitted Gaussian parameters:
+
 original_params <- tibble::tribble(
   ~unit, ~wood, ~a, ~mu, ~sigma,
-  "RY", "HW", 0.526, 29.5, 28.4,
-  "RY", "SW", 0.654, 31.2, 23.2,
-  "SP", "HW", 0.551, 29.1, 45.2,
-  "SP", "SW", 0.661, 25.9, 20.7
+  "RY", "HW", 0.532, 28.3, 22.6,
+  "RY", "SW", 0.620, 29.4, 20.4,
+  "SP", "HW", 0.537, 32.0, 24.5,
+  "SP", "SW", 0.580, 26.5, 21.5
 )
-
 # Gaussian function
 gaussian <- function(vol, a, mu, sigma) {
   a * exp(-0.5 * ((vol - mu) / sigma)^2)
@@ -52,18 +52,18 @@ long_df_eval <- long_df %>%
     # Estimate missing species volume
     hw_volume = if_else(wood == "HW", volume, 0),
     sw_volume = if_else(wood == "SW", volume, 0),
-    
+
     # Tempered Gaussian
     pred_gaussian = mapply(
-      calculate_growth_gaussian,
+      calculate_growth_rate,
       township = unit,
       hw_volume = hw_volume,
       sw_volume = sw_volume
     ),
-    
+
     # Power-law
     pred_power = mapply(
-      calculate_growth_rate,
+      calculate_growth_rate_power,
       township = unit,
       hw_volume = hw_volume,
       sw_volume = sw_volume
@@ -73,7 +73,7 @@ long_df_eval <- long_df %>%
   left_join(original_params, by = c("unit", "wood")) %>%
   mutate(
     pred_untempered = gaussian(volume, a, mu, sigma),
-    
+
     # Residuals
     resid_gaussian   = growth_yr - pred_gaussian,
     resid_power      = growth_yr - pred_power,
