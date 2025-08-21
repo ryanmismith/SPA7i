@@ -13,92 +13,179 @@ tornadoSensitivity(
   FutureValue,
   Exit = TRUE,
   ShockSpec,
+  Driver = NULL,
   FlowNameMap = NULL
 )
 }
 \arguments{
-\item{Flow}{Numeric vector of cash flows (length = n rows).}
+\item{Flow}{numeric, cash flows.}
 
-\item{Occurrence}{Numeric vector of periods (1..T) for each cash flow; same length as \code{Flow}.}
+\item{Occurrence}{numeric, periods (1..T), same length as Flow.}
 
-\item{Name}{Character vector of flow labels (e.g., "Harvest Revenue", "Operating Expense"); same length as \code{Flow}.}
+\item{Name}{character, flow labels, same length as Flow.}
 
-\item{NominalRate}{Numeric scalar, the discount rate (e.g., 0.05).}
+\item{NominalRate}{numeric scalar discount rate (e.g., 0.05).}
 
-\item{TerminalYear}{Integer terminal year at which the terminal value is applied.}
+\item{TerminalYear}{integer, terminal year for terminal value.}
 
-\item{FutureValue}{Numeric scalar, terminal value at \code{TerminalYear} (undiscounted).}
+\item{FutureValue}{numeric scalar, terminal value at TerminalYear (undiscounted).}
 
-\item{Exit}{Logical; if \code{TRUE}, use present value for the terminal (exit/sale).
-If \code{FALSE}, use \code{landExpectVal} (perpetuity) at the terminal year.}
+\item{Exit}{logical; TRUE uses present value terminal (exit/sale), FALSE uses land expectation value at TerminalYear.}
 
-\item{ShockSpec}{A \code{data.frame} defining drivers and low/high multipliers with
-columns: \code{driver} (label), \code{type} (one of "flow_name","rate","terminal"),
-\code{low_mult}, \code{high_mult}. See Details.}
+\item{ShockSpec}{data.frame with columns: driver, type in {"flow","flow_name","rate","terminal"}, low_mult, high_mult.}
 
-\item{FlowNameMap}{Optional named list mapping the flow labels present in \code{Name}
-to the friendly driver labels used in \code{ShockSpec}. Keys are the exact strings in
-\code{Name}, values are the \code{driver} labels. If \code{NULL}, the function assumes
-\code{driver} entries in \code{ShockSpec} directly match values of \code{Name}.}
+\item{Driver}{optional character vector (same length as Flow) giving the driver label for each row in the flow table.
+If NULL, the function falls back to FlowNameMap or Name.}
+
+\item{FlowNameMap}{optional named list mapping values in Name -> driver labels (ignored if Driver is provided).}
 }
 \value{
 A list with:
 \itemize{
-  \item \code{baseline_npv} Numeric scalar.
-  \item \code{tornado_table} \code{data.frame} with columns
-        \code{driver}, \code{low_delta}, \code{high_delta}, \code{range} (sorted).
-  \item \code{plot} A ggplot object for the tornado chart.
-  \item \code{assumptions} A list echoing key inputs and the \code{ShockSpec} used.
+  \item \code{baseline_npv} Numeric scalar, the baseline NPV under the input assumptions.
+  \item \code{tornado_table} \code{data.frame} with columns:
+        \code{driver}, \code{low_delta}, \code{high_delta}, \code{range}.
+        Deltas are low/high NPV minus baseline NPV (same units as NPV).
+        The table is sorted in \emph{descending} \code{range}, where
+        \code{range = |low_delta| + |high_delta|}.
+  \item \code{plot} A \code{ggplot} tornado chart built from \code{tornado_table}.
+  \item \code{assumptions} A list echoing key inputs and metadata, including
+        \code{NominalRate}, \code{TerminalYear}, \code{FutureValue}, \code{Exit},
+        the \code{ShockSpec} used, any \code{FlowNameMap} provided, and the
+        driver source (\code{"Driver"}, \code{"FlowNameMap"}, or \code{"Name"}).
 }
 }
 \description{
 Computes a one-way tornado sensitivity by perturbing selected drivers
-(flows by name, the discount rate, and/or terminal value) to low/high cases
+(flows by driver label, the discount rate, and/or terminal value) to low/high cases
 while holding all other inputs fixed. Returns a sorted table of low/high
 deltas versus baseline NPV and a ggplot object for the tornado chart.
 }
 \details{
-Deterministic NPV is computed as the present value of the annual flow stream
-plus a terminal component at \code{TerminalYear}. If \code{Exit = TRUE},
-the terminal is discounted with \code{presentValue(FutureValue, TerminalYear, NominalRate)};
-otherwise, \code{landExpectVal(FutureValue, TerminalYear, NominalRate)} is used.
+Deterministic NPV = PV(annual flows) + terminal component at TerminalYear.
+If Exit = TRUE, terminal PV uses presentValue(FutureValue, TerminalYear, NominalRate);
+else landExpectVal(FutureValue, TerminalYear, NominalRate).
 
 
-\strong{ShockSpec} examples:
+\strong{Driver matching.} Each flow row can carry a \code{Driver} label. Shocks of
+\code{type="flow"} are applied to all rows where \code{flows_df$Driver == driver}.
+If \code{Driver} is not supplied, \code{FlowNameMap} (a named list mapping \code{Name}
+-> driver label) is used; if that is also \code{NULL}, the \code{Name} itself is used
+as the driver label.
+
+\strong{ShockSpec.} A data frame with columns:
+\itemize{
+  \item \code{driver}: character label to match against \code{Driver} (or mapped \code{Name}).
+  \item \code{type}: one of \code{"flow"}, \code{"rate"}, \code{"terminal"}.
+        (\code{"flow_name"} is accepted as an alias for \code{"flow"} for backward compatibility.)
+  \item \code{low_mult}, \code{high_mult}: numeric multipliers for the low/high cases.
+}
+
+\strong{How multipliers are applied.}
+\itemize{
+  \item \code{type="flow"}: multiply \code{Value} for matching rows by the multiplier.
+  \item \code{type="rate"}: multiply \code{NominalRate} by the multiplier
+        (e.g., \code{1.15} = +15\% relative change in the rate).
+  \item \code{type="terminal"}: multiply \code{FutureValue} by the multiplier.
+}
+
+Low/high multipliers should reflect the intended directionality. For costs, a common
+convention is \code{low_mult > 1} and \code{high_mult < 1}; for revenues, the opposite.
+
+\strong{ShockSpec example.}
 \preformatted{
 data.frame(
-  driver = c("Discount Rate", "Harvest Revenue", "Operating Costs", "Terminal Value"),
-  type   = c("rate",          "flow_name",       "flow_name",       "terminal"),
-  low_mult  = c(1.15,          0.85,              1.15,              0.85),
-  high_mult = c(0.85,          1.15,              0.85,              1.15)
+  driver    = c("Discount Rate","Harvest Revenue","Operating Costs","Terminal Value"),
+  type      = c("rate",         "flow",           "flow",           "terminal"),
+  low_mult  = c(1.15,           0.85,             1.15,             0.85),
+  high_mult = c(0.85,           1.15,             0.85,             1.15)
 )
 }
-Low/high multipliers should reflect the intended directionality
-(e.g., for costs you typically increase for "low" and decrease for "high").
+
+\strong{NPV convention.} Deterministic NPV = present value of annual flows plus a
+terminal component at \code{TerminalYear}. If \code{Exit=TRUE}, the terminal is
+discounted with \code{presentValue(FutureValue, TerminalYear, NominalRate)}; otherwise,
+\code{landExpectVal(FutureValue, TerminalYear, NominalRate)} is used.
 }
 \examples{
 \dontrun{
+# Minimal helpers for terminal handling used by tornadoSensitivity():
+presentValue  <- function(fv, n, r) fv / (1 + r)^n
+landExpectVal <- function(a, n, r) (a / r) / (1 + r)^n
+
+# Toy cash-flow schedule (revenues positive, costs negative)
+flows <- data.frame(
+  Year   = c(1, 1, 5, 5, 10, 10, 15, 15),
+  Name   = c("Harvest Revenue","Operating Expense",
+             "Harvest Revenue","Operating Expense",
+             "Harvest Revenue","Operating Expense",
+             "Harvest Revenue","Operating Expense"),
+  Driver = c("Harvest Revenue","Operating Costs",
+             "Harvest Revenue","Operating Costs",
+             "Harvest Revenue","Operating Costs",
+             "Harvest Revenue","Operating Costs"),
+  Value  = c(50000, -15000,
+             65000, -17000,
+             80000, -18000,
+             90000, -20000),
+  stringsAsFactors = FALSE
+)
+
+# Shock specification: rate, flows by Driver label, and terminal value
 ShockSpec <- data.frame(
-  driver   = c("Discount Rate","Harvest Revenue","Operating Costs","Terminal Value"),
-  type     = c("rate","flow_name","flow_name","terminal"),
-  low_mult = c(1.15, 0.85, 1.15, 0.85),
-  high_mult= c(0.85, 1.15, 0.85, 1.15)
+  driver    = c("Discount Rate", "Harvest Revenue", "Operating Costs", "Terminal Value"),
+  type      = c("rate",          "flow",            "flow",            "terminal"),
+  low_mult  = c(1.15,            0.85,              1.15,              0.85),
+  high_mult = c(0.85,            1.15,              0.85,              1.15),
+  stringsAsFactors = FALSE
 )
+
+# Parameters
+r  <- 0.06
+Tm <- 20
+FV <- 250000  # if Exit=TRUE: lump-sum at year Tm; if Exit=FALSE: annualized steady-state amount
+
+# Run with explicit Driver column (preferred)
 out <- tornadoSensitivity(
-  Flow = master_flows$Value,
-  Occurrence = master_flows$Year,
-  Name = master_flows$Name,
-  NominalRate = discount_rate,
-  TerminalYear = years,
-  FutureValue = final_standing_value,
-  Exit = TRUE,
-  ShockSpec = ShockSpec,
-  FlowNameMap = list(
-    "Harvest Revenue"   = "Harvest Revenue",
-    "Operating Expense" = "Operating Costs"
-  )
+  Flow         = flows$Value,
+  Occurrence   = flows$Year,
+  Name         = flows$Name,
+  Driver       = flows$Driver,
+  NominalRate  = r,
+  TerminalYear = Tm,
+  FutureValue  = FV,
+  Exit         = TRUE,      # set FALSE to use land expectation value at Tm
+  ShockSpec    = ShockSpec
 )
+
+# Inspect results
+round(out$baseline_npv, 2)
+transform(out$tornado_table,
+          low_delta  = round(low_delta,  2),
+          high_delta = round(high_delta, 2),
+          range      = round(range,      2))
+
+# Plot
 out$plot
-out$tornado_table
+
+# Variation: if you do NOT carry a Driver column,
+# you can map Name -> driver labels with FlowNameMap:
+FlowNameMap <- list(
+  "Harvest Revenue"   = "Harvest Revenue",
+  "Operating Expense" = "Operating Costs"
+)
+out2 <- tornadoSensitivity(
+  Flow         = flows$Value,
+  Occurrence   = flows$Year,
+  Name         = flows$Name,
+  NominalRate  = r,
+  TerminalYear = Tm,
+  FutureValue  = FV,
+  Exit         = FALSE,     # use LEV at terminal year
+  ShockSpec    = ShockSpec,
+  FlowNameMap  = FlowNameMap
+)
+round(out2$baseline_npv, 2)
+out2$plot
 }
 }
