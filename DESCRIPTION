@@ -1,7 +1,7 @@
 Package: SPA7i
 Type: Package
 Title: SPA Analysis Functions
-Version: 0.4.5
+Version: 0.4.6
 Author: Ryan Smith
 Maintainer: Ryan Smith <ryan.mi.smith@gmail.com>
 Description: Growth and Yield, AAC and NPV analysis functions.
