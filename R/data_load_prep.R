@@ -4,6 +4,7 @@
 #' "Inventory" and "Spatial". The "Inventory" sheet is cleaned by selecting
 #' relevant columns (`township`, `matrix`, `acres`, `product`, `cords`), and any
 #' column containing the word "matrix" is renamed to "matrix" if not already named so.
+#' If `landuse` is present, it will also be passed on in the inventory table but it is not required.
 #' The "Spatial" sheet has all its colnames converted to lowercase.
 #'
 #' @param filepath A string representing the file path to the Excel file containing the data.
@@ -28,28 +29,47 @@
 dataPreparation <- function(filepath) {
   # Process the 'Inventory' sheet
   inventory_data <- read_excel(filepath, sheet = "Inventory") %>%
-    # Remove unnamed columns and convert column names to lowercase
-    select(where(~ !all(is.na(.)))) |>
-    rename_with(tolower) %>%
-    # Check if any column contains "matrix" and is not already "matrix"
+    select(where(~ !all(is.na(.)))) %>%   # Drop all-NA columns
+    rename_with(tolower) %>%              # Lowercase names
     {
       matrix_cols <- grep("matrix", colnames(.), value = TRUE)
       if (length(matrix_cols) > 0 && !"matrix" %in% colnames(.)) {
-        . <- rename(., matrix = matrix_cols[1])
-      }
-      .
+        rename(., matrix = matrix_cols[1])
+      } else .
     } %>%
-    # Select relevant columns
-    select(township, matrix, acres, product, cords)
+    {
+      if (!"unit" %in% names(.)) {
+        message("No 'unit' column found. Assigning one with assign_spa_unit().")
+        mutate(., unit = assign_spa_unit(township))
+      } else .
+    } %>%
+    {
+      # REQUIRED columns
+      required_cols <- c("unit", "township", "matrix", "acres", "product", "cords")
 
-  # Process the 'Spatial' sheet
+      # OPTIONAL columns to keep ONLY if they exist
+      optional_cols <- c("landuse")
+
+      # Keep optional cols only if they exist in the dataset
+      available_optional <- intersect(optional_cols, names(.))
+
+      # Identify missing required ones as before
+      missing_cols <- setdiff(required_cols, names(.))
+      if (length(missing_cols) > 0) {
+        warning("Missing expected columns: ", paste(missing_cols, collapse = ", "))
+        for (col in missing_cols) .[[col]] <- NA
+      }
+
+      # Select required + any optional that exist
+      select(., all_of(c(required_cols, available_optional)))
+    }
+
+  # Process Spatial sheet
   spatial_data <- read_excel(filepath, sheet = "Spatial") %>%
-    # Convert all text to lowercase
     rename_with(tolower)
 
-  # Return as a named list
-  return(list(
+  list(
     Inventory = inventory_data,
     Spatial = spatial_data
-  ))
+  )
 }

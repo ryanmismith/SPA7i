@@ -73,7 +73,15 @@ calculate_growth_rate <- function(township = 'T13R5',
   # map township → case
   unit <- assign_spa_unit(township)
   if (is.na(unit)) {
-    unit <- 'AE'
+    # Normalize the township (uppercase, trim spaces)
+    tname <- toupper(trimws(as.character(township)))
+
+    # If township itself is one of the valid district codes (RY, SP, AW, AE)
+    if (tname %in% c("RY", "SP", "AW", "AE")) {
+      unit <- tname
+    } else {
+      unit <- "AE"
+    }
   }
 
   # Extract parameters
