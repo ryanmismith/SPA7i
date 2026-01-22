@@ -18,7 +18,8 @@
 #'   township = c("township1", "township1", "township2", "township2"),
 #'   matrix = c("matrix1", "matrix1", "matrix1", "matrix1"),
 #'   product = c("PerAcreSW", "perAcreHW", "perAcreSW", "perAcre_HW"),
-#'   cords = c(10, 15, 5, 8)
+#'   cords = c(10, 15, 5, 8),
+#'   acres = c(40, 50, 50, 50)
 #'   )
 #'
 #' # Generate input for growth models

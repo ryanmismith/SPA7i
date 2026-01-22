@@ -17,32 +17,34 @@ run_system_simulation(
 )
 }
 \arguments{
-\item{df}{A dataframe containing the forest inventory. Must contain columns: 'township', 'matrix', 'perAcreHW', 'perAcreSW', and **'Acres'**.}
+\item{df}{A dataframe containing the forest inventory. Must contain columns: 'township', 'matrix', 'perAcreHW', 'perAcreSW', and \strong{'Acres'}.}
 
-\item{aac_percentage}{Numeric. Used only in "percentage" mode. The % of growth to harvest (e.g., 1.0 for 100% of growth).}
+\item{aac_percentage}{Numeric. Used only in "percentage" mode. The \% of growth to harvest (e.g., 1.0 for 100\% of growth).}
 
 \item{min_stocking}{Numeric. The baseline volume (cords/acre) that must be maintained. Harvests cannot reduce volume below this floor.}
 
-\item{max_harvest_acres}{Numeric. The maximum allowable harvest footprint per year across the entire dataset. Defaults to `Inf` (unconstrained).}
+\item{max_harvest_acres}{Numeric. The maximum allowable harvest footprint per year across the entire dataset. Defaults to \code{Inf} (unconstrained).}
 
-\item{max_harvest}{Logical. If TRUE, forces a "reset" harvest in Year 1 to bring stands down to `min_stocking`. Defaults to `FALSE`.}
+\item{max_harvest}{Logical. If TRUE, forces a "reset" harvest in Year 1 to bring stands down to \code{min_stocking}. Defaults to \code{FALSE}.}
 
-\item{min_aac}{Logical. If TRUE, applies a minimum harvest floor (0.5 cords) if growth rates are very low but stocking is high. Defaults to `TRUE`.}
+\item{min_aac}{Logical. If TRUE, applies a minimum harvest floor (0.5 cords) if growth rates are very low but stocking is high. Defaults to \code{TRUE}.}
 
 \item{years}{Integer. Number of years to simulate. Defaults to 20.}
 
 \item{harvest_mode}{Character. One of "percentage" (skim growth) or "concentrated" (take fixed volume). Defaults to "percentage".}
 
 \item{removal}{Numeric. Used only in "concentrated" mode. The specific volume (cords/acre) to harvest during an entry.
-Also acts as the threshold trigger (Stand must have `min_stocking + removal` volume to be entered).}
+Also acts as the threshold trigger (Stand must have \code{min_stocking + removal} volume to be entered).}
 }
 \value{
 A dataframe containing annual states for every stand, including:
-* `Year`: 0 to `years`.
-* `HW_AAC` / `SW_AAC`: Volume harvested that year.
-* `Entry_Status`: 1 if the stand was entered, 0 otherwise.
-* `Harvested_Acres`: The acres harvested (0 if no entry).
-* `hw_growth` / `sw_growth`: The biological growth calculated for that year.
+\itemize{
+  \item \code{Year}: 0 to \code{years}.
+  \item \code{HW_AAC} / \code{SW_AAC}: Volume harvested that year.
+  \item \code{Entry_Status}: 1 if the stand was entered, 0 otherwise.
+  \item \code{Harvested_Acres}: The acres harvested (0 if no entry).
+  \item \code{hw_growth} / \code{sw_growth}: The biological growth calculated for that year.
+}
 }
 \description{
 A vectorized, system-level simulation that evolves all stands simultaneously year-by-year.
@@ -51,41 +53,52 @@ global constraints (such as \code{max_harvest_acres}) that apply across the enti
 It includes a Year 0 initialization state to match legacy reporting formats.
 
 Handles "Oversized Stands" by splitting them into smaller pieces before simulation to ensure
-they can fit into the annual `max_harvest_acres` budget. If a matrix is >50% the size of `max_harvest_acres`
-it is automatically split in n parts where n = `matrix_acres*3`/`max_harvest_acres`
+they can fit into the annual \code{max_harvest_acres} budget. If a matrix is >50\% the size of
+\code{max_harvest_acres} it is automatically split in n parts where
+n = \code{matrix_acres * 3 / max_harvest_acres}.
 Automatically aggregates results back to the original Matrix level after simulation.
 }
 \details{
-### System-Level vs. Stand-Level
+\strong{System-Level vs. Stand-Level}
+
 This function iterates through time (Year 1, then Year 2...) rather than through stands. This allows the model
 to track the cumulative acres harvested across the entire landscape in a single year and stop harvesting
 once a global limit is reached.
 
-### Harvest Modes & Logic
+\strong{Harvest Modes & Logic}
+
 The function supports two distinct harvesting behaviors controlled by \code{harvest_mode}:
 
-**1. Percentage Mode (`harvest_mode = "percentage"`):**
-* **Trigger:** Harvest occurs if the stand volume is above \code{min_stocking}.
-* **Amount:** The model harvests a percentage (\code{aac_percentage}) of the stand's **growth** for that year.
-* **Concept:** This mimics a "skimming" approach where capital is preserved and only interest (growth) is removed.
-
-**2. Concentrated Mode (`harvest_mode = "concentrated"`):**
-* **Trigger:** Harvest occurs ONLY if the stand contains enough "excess" wood to justify an entry.
+\itemize{
+  \item \strong{1. Percentage Mode (\code{harvest_mode = "percentage"}):}
+  \itemize{
+    \item \strong{Trigger:} Harvest occurs if the stand volume is above \code{min_stocking}.
+    \item \strong{Amount:} The model harvests a percentage (\code{aac_percentage}) of the stand's \strong{growth} for that year.
+    \item \strong{Concept:} This mimics a "skimming" approach where capital is preserved and only interest (growth) is removed.
+  }
+  \item \strong{2. Concentrated Mode (\code{harvest_mode = "concentrated"}):}
+  \itemize{
+    \item \strong{Trigger:} Harvest occurs ONLY if the stand contains enough "excess" wood to justify an entry.
     Specifically: \code{(Total Volume - Min Stocking) >= removal}.
     Therefore, a stand is only eligible if its Total Volume is at least \code{min_stocking + removal}.
-* **Amount:** The model removes exactly the \code{removal} amount (e.g., 10 cords/acre).
-* **Concept:** This mimics operational reality where equipment mobilization requires a minimum cut per acre.
+    \item \strong{Amount:} The model removes exactly the \code{removal} amount (e.g., 10 cords/acre).
+    \item \strong{Concept:} This mimics operational reality where equipment mobilization requires a minimum cut per acre.
     If a stand is eligible, it is harvested; otherwise, it is left to grow until it reaches the threshold.
+  }
+}
 
-### Global Acre Constraints
+\strong{Global Acre Constraints}
+
 When \code{max_harvest_acres} is set (i.e., not infinite), the simulation enforces a strict annual budget:
-1.  At the start of each year, the order of stands is **randomized** (shuffled).
-2.  The model evaluates stands one by one.
-3.  If a stand triggers a harvest (based on the logic above), the model checks if adding this stand's acres
-    would exceed the \code{max_harvest_acres} for the year.
-4.  **All-or-Nothing Rule:** If the stand fits in the remaining budget, it is harvested. If the stand is larger
-    than the remaining budget, it is **skipped entirely** for that year (it is not partially harvested).
-5.  Skipped stands continue to grow and are eligible for the "lottery" again in the next year.
+\enumerate{
+  \item At the start of each year, the order of stands is \strong{randomized} (shuffled).
+  \item The model evaluates stands one by one.
+  \item If a stand triggers a harvest (based on the logic above), the model checks if adding this stand's acres
+  would exceed the \code{max_harvest_acres} for the year.
+  \item \strong{All-or-Nothing Rule:} If the stand fits in the remaining budget, it is harvested. If the stand is larger
+  than the remaining budget, it is \strong{skipped entirely} for that year (it is not partially harvested).
+  \item Skipped stands continue to grow and are eligible for the "lottery" again in the next year.
+}
 }
 \examples{
 # Prepare dummy data with Acres

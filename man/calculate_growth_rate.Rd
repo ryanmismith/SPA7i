@@ -13,7 +13,7 @@ calculate_growth_rate(
 )
 }
 \arguments{
-\item{township}{Character. The stand's township code (e.g., `"T13R5"`, `"Davis"`).
+\item{township}{Character. The stand's township code (e.g., "T13R5", "Davis").
 Used to assign the growth curve parameters via \code{\link{assign_spa_unit}}.}
 
 \item{hw_volume}{Numeric. Hardwood volume in cords/acre.}
@@ -35,23 +35,24 @@ Growth is calculated independently for hardwood and softwood using the function:
 \deqn{G(V) = a \cdot \exp\left(-\frac{1}{2} \left(\frac{V - \mu}{\sigma}\right)^2\right)}
 
 where:
-
-- \( G(V) \) is the growth at volume \( V \),
-- \( a \) is the peak growth rate (tempered from original fits),
-- \( \mu \) is the volume at which peak growth occurs, and
-- \( \sigma \) controls the spread of the growth curve.
+\itemize{
+  \item \eqn{G(V)} is the growth at volume \eqn{V},
+  \item \eqn{a} is the peak growth rate (tempered from original fits),
+  \item \eqn{\mu} is the volume at which peak growth occurs, and
+  \item \eqn{\sigma} controls the spread of the growth curve.
+}
 
 The final growth rate is the weighted average of hardwood and softwood growth,
 based on their proportion of total volume:
 
 \deqn{
-\text{growth}_\text{total} =
-\frac{V_{\mathrm{HW}}}{V} \cdot G_{\mathrm{HW}} +
-\frac{V_{\mathrm{SW}}}{V} \cdot G_{\mathrm{SW}}
+growth_{total} =
+\frac{V_{HW}}{V} \cdot G_{HW} +
+\frac{V_{SW}}{V} \cdot G_{SW}
 }
 
 Parameters are derived from nonlinear least squares fits to empirical data
-and then scaled (a × 0.9) to temper model optimism based on field observations.
+and then scaled (a * 0.9) to temper model optimism based on field observations.
 
 If total volume is zero or negative, the function returns 0.
 }
