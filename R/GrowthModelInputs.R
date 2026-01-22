@@ -50,9 +50,11 @@ GrowthModelInput <- function(arc_df){
   #Pivot to get DF in correct structure for AAC Simulations
   final_results <- final_results |>
     tidyr::pivot_wider(
-      names_from = product,   # Column to create new columns from
-      values_from = cords     # Column containing the values for the new columns
-      )
+      names_from = product,
+      values_from = cords
+    ) |>
+    # CRITICAL STEP: Rename 'acres' to 'Acres' to match run_aac_for_all requirement
+    dplyr::rename(Acres = acres)
 
       return(final_results)
 }

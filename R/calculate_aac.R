@@ -43,6 +43,8 @@
 #' @param hw_max_rate Numeric. The initial growth rate for hardwood, default is 0.40.
 #' @param min_rate Numeric. The minimum growth rate when the combined volume reaches or exceeds the maximum, default is 0.02.
 #' @param maxvol Numeric. Default is 38. This value is used to calculate max volume before min growth using \code{\link{calculate_max_volume}}.
+#' @param harvest_mode Character. "percentage" (default) or "concentrated".
+#' @param removal Numeric. The fixed amount (cords/acre) to harvest in "concentrated" mode.
 #'
 #' @return A list containing:
 #'
@@ -160,7 +162,9 @@ calculate_aac <- function(township = 'T13R5',
                           aac_percentage, min_stocking = 12,
                           max_harvest = FALSE, min_aac = TRUE,
                           sw_max_rate = .45, hw_max_rate = .40,
-                          min_rate = .25, maxvol = 38) {
+                          min_rate = .25, maxvol = 38,
+                          harvest_mode = "percentage",
+                          removal = 10) {
 
   total_volume <- hw_volume + sw_volume
 
@@ -187,23 +191,40 @@ calculate_aac <- function(township = 'T13R5',
 
   # --- Policy: choose a desired total AAC for this period ---
   desired_total_aac <- 0
-  if (isTRUE(max_harvest) && total_volume > min_stocking) {
-    # One-time heavy entry to min_stocking (uses this period's growth)
-    desired_total_aac <- total_volume + total_growth - min_stocking
-  } else if (isTRUE(min_aac) && total_growth < 0.25 && total_volume >= min_stocking) {
-    # Low-growth safeguard: target 0.5 cords/ac total AAC
-    desired_total_aac <- 0.5
-  } else if (total_volume >= min_stocking) {
-    # Normal case: percentage of growth
-    desired_total_aac <- aac_percentage * total_growth
+
+  if (harvest_mode == "concentrated") {
+    # --- CONCENTRATED MODE ---
+    # Logic: If we have enough wood ABOVE min_stocking to pull a full load (removal), do it.
+    available_wood <- total_volume - min_stocking
+
+    if (available_wood >= removal) {
+      desired_total_aac <- removal
+      entry_made <- TRUE
+    } else {
+      desired_total_aac <- 0
+      entry_made <- FALSE
+    }
   } else {
-    # Below min_stocking: no AAC
-    desired_total_aac <- 0
+    # --- PERCENTAGE MODE (Original) ---
+    if (isTRUE(max_harvest) && total_volume > min_stocking) {
+      desired_total_aac <- total_volume + total_growth - min_stocking
+      entry_made <- TRUE
+    } else if (isTRUE(min_aac) && total_growth < 0.25 && total_volume >= min_stocking) {
+      desired_total_aac <- 0.5
+      entry_made <- TRUE
+    } else if (total_volume >= min_stocking) {
+      desired_total_aac <- aac_percentage * total_growth
+      entry_made <- (desired_total_aac > 0)
+    } else {
+      desired_total_aac <- 0
+      entry_made <- FALSE
+    }
   }
 
   # --- Constraint: cap AAC so END-OF-PERIOD volume stays ≥ min_stocking ---
   # End volume = total_volume + total_growth - total_aac
   allowed_total_aac <- max(0, (total_volume + total_growth) - min_stocking)
+
   total_aac <- min(desired_total_aac, allowed_total_aac)
 
   # Split AAC and growth by species shares
@@ -218,6 +239,7 @@ calculate_aac <- function(township = 'T13R5',
     sw_aac      = sw_aac,
     growth_rate = total_growth,
     hw_growth   = prorated_hw_growth,
-    sw_growth   = prorated_sw_growth
+    sw_growth   = prorated_sw_growth,
+    entry_made  = entry_made # NEW RETURN VALUE
   ))
 }

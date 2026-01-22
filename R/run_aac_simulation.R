@@ -12,6 +12,8 @@
 #' @param min_stocking Numeric, minimum stocking level for AAC to begin or to reduce AAC to growth (required).
 #' @param max_harvest Logical, whether to apply maximum harvest to `min_stocking` at period of first entry (default is FALSE).
 #' @param min_aac Logical, whether to apply minimum AAC > growth once growth rates slow due to density (default is TRUE).
+#' @param harvest_mode Character. "percentage" (default) or "concentrated".
+#' @param removal Numeric. The fixed amount (cords/acre) to harvest in "concentrated" mode.
 #' @param years Integer, number of years to simulate (default is 20).
 #'
 #' @return A dataframe with AAC results for each year, including standing HW/SW/Total volumes,
@@ -56,6 +58,7 @@ run_aac_simulation <- function(township = 'T13R5',
                                hw_volume, sw_volume,
                                aac_percentage, min_stocking,
                                max_harvest = FALSE, min_aac = TRUE,
+                               harvest_mode = "percentage", removal = 10,
                                years = 20) {
 
   maxVol <- calculate_max_volume(hw_volume, sw_volume)
@@ -71,7 +74,8 @@ run_aac_simulation <- function(township = 'T13R5',
     Total_AAC    = NA_real_,
     total_growth = NA_real_,
     hw_growth    = NA_real_,
-    sw_growth    = NA_real_
+    sw_growth    = NA_real_,
+    Entry_Status = 0
   )
 
   for (year in 1:years) {
@@ -86,7 +90,9 @@ run_aac_simulation <- function(township = 'T13R5',
       min_stocking  = min_stocking,
       max_harvest   = apply_max_harvest,
       min_aac       = min_aac,
-      maxvol        = maxVol
+      maxvol        = maxVol,
+      harvest_mode   = harvest_mode,       # NEW ARG
+      removal = removal    # NEW ARG
     )
 
     # Update standing volumes
@@ -106,7 +112,8 @@ run_aac_simulation <- function(township = 'T13R5',
         Total_AAC    = aac_result$hw_aac + aac_result$sw_aac,
         total_growth = aac_result$growth_rate,
         hw_growth    = aac_result$hw_growth,
-        sw_growth    = aac_result$sw_growth
+        sw_growth    = aac_result$sw_growth,
+        Entry_Status = as.integer(aac_result$entry_made) # Track 1 for entry, 0 for no entry
       )
     )
   }

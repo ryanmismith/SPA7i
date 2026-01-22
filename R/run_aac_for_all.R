@@ -18,6 +18,8 @@
 #' @param min_stocking Numeric, minimum stocking level for AAC to begin or to reduce AAC to growth (required).
 #' @param max_harvest Logical, whether to apply maximum harvest to `min_stocking` at period of first entry (default is FALSE).
 #' @param min_aac Logical, whether to apply minimum AAC > growth once growth rates slow due to density (default is TRUE).
+#' @param harvest_mode Character. "percentage" (default) or "concentrated".
+#' @param removal Numeric. The fixed amount (cords/acre) to harvest in "concentrated" mode.
 #' @param years Integer, number of years to simulate (default is 20).
 #'
 #' @return A dataframe with the growth and AAC simulation results for all township-matrix combinations over the specified years.
@@ -43,10 +45,14 @@
 #' @export
 
 run_aac_for_all <- function(df, aac_percentage, min_stocking,
-                            max_harvest = FALSE, min_aac = TRUE, years = 20) {
+                            max_harvest = FALSE, min_aac = TRUE, years = 20,
+                            harvest_mode = "percentage", removal = 10) {
+
   # Ensure numeric values for aac_percentage and min_stocking
   aac_percentage <- as.numeric(aac_percentage)
   min_stocking <- as.numeric(min_stocking)
+
+  if(!"Acres" %in% names(df)) stop("Input dataframe must have an 'Acres' column to calculate harvested acres.")
 
   df |>
     dplyr::group_by(township, matrix) |>
@@ -56,14 +62,21 @@ run_aac_for_all <- function(df, aac_percentage, min_stocking,
       hw_volume <- as.numeric(.x$perAcreHW[1])
       sw_volume <- as.numeric(.x$perAcreSW[1])
 
+      # Determine acres for this specific stratum
+      # Using sum() in case the group has multiple rows (though usually 1 per matrix)
+      stratum_acres <- sum(as.numeric(.x$Acres), na.rm = TRUE)
+
       # Run the AAC simulation for each group
       result <- run_aac_simulation(township = twp,
                                    hw_volume, sw_volume, aac_percentage, min_stocking,
-                                   max_harvest = max_harvest, min_aac = min_aac, years = years)
+                                   max_harvest = max_harvest, min_aac = min_aac, years = years,
+                                   harvest_mode = harvest_mode, removal = removal)
 
       # Add township and matrix information to the result
       result$township <- unique(.x$township)
       result$matrix <- unique(.x$matrix)
+      result$Acres <- stratum_acres
+      result$Harvested_Acres <- result$Entry_Status * stratum_acres
 
       return(result)
     }, .keep = TRUE) |>
