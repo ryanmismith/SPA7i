@@ -12,6 +12,8 @@ run_aac_simulation(
   min_stocking,
   max_harvest = FALSE,
   min_aac = TRUE,
+  harvest_mode = "percentage",
+  removal = 10,
   years = 20
 )
 }
@@ -27,6 +29,10 @@ run_aac_simulation(
 \item{max_harvest}{Logical, whether to apply maximum harvest to `min_stocking` at period of first entry (default is FALSE).}
 
 \item{min_aac}{Logical, whether to apply minimum AAC > growth once growth rates slow due to density (default is TRUE).}
+
+\item{harvest_mode}{Character. "percentage" (default) or "concentrated".}
+
+\item{removal}{Numeric. The fixed amount (cords/acre) to harvest in "concentrated" mode.}
 
 \item{years}{Integer, number of years to simulate (default is 20).}
 }
@@ -75,6 +81,7 @@ print(results_scenario_5)
 \seealso{
 Other AAC Functions: 
 \code{\link{calculate_aac}()},
-\code{\link{run_aac_for_all}()}
+\code{\link{run_aac_for_all}()},
+\code{\link{run_system_simulation}()}
 }
 \concept{AAC Functions}

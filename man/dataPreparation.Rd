@@ -19,6 +19,7 @@ This function processes an Excel file with two sheets:
 "Inventory" and "Spatial". The "Inventory" sheet is cleaned by selecting
 relevant columns (`township`, `matrix`, `acres`, `product`, `cords`), and any
 column containing the word "matrix" is renamed to "matrix" if not already named so.
+If `landuse` is present, it will also be passed on in the inventory table but it is not required.
 The "Spatial" sheet has all its colnames converted to lowercase.
 }
 \examples{

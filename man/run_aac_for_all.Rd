@@ -10,7 +10,9 @@ run_aac_for_all(
   min_stocking,
   max_harvest = FALSE,
   min_aac = TRUE,
-  years = 20
+  years = 20,
+  harvest_mode = "percentage",
+  removal = 10
 )
 }
 \arguments{
@@ -25,6 +27,10 @@ run_aac_for_all(
 \item{min_aac}{Logical, whether to apply minimum AAC > growth once growth rates slow due to density (default is TRUE).}
 
 \item{years}{Integer, number of years to simulate (default is 20).}
+
+\item{harvest_mode}{Character. "percentage" (default) or "concentrated".}
+
+\item{removal}{Numeric. The fixed amount (cords/acre) to harvest in "concentrated" mode.}
 }
 \value{
 A dataframe with the growth and AAC simulation results for all township-matrix combinations over the specified years.
@@ -64,6 +70,7 @@ print(results_combined)
 
 Other AAC Functions: 
 \code{\link{calculate_aac}()},
-\code{\link{run_aac_simulation}()}
+\code{\link{run_aac_simulation}()},
+\code{\link{run_system_simulation}()}
 }
 \concept{AAC Functions}

@@ -9,6 +9,7 @@
 #'
 #' @return list(annual_volumes, summary_volumes, hardwood_volumes)
 #' @export
+#'
 summarizeProductVolumesExpanded <- function(aac_results,
                                             ratios_df,
                                             arcOutput,

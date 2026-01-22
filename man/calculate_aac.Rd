@@ -15,7 +15,9 @@ calculate_aac(
   sw_max_rate = 0.45,
   hw_max_rate = 0.4,
   min_rate = 0.25,
-  maxvol = 38
+  maxvol = 38,
+  harvest_mode = "percentage",
+  removal = 10
 )
 }
 \arguments{
@@ -38,6 +40,10 @@ calculate_aac(
 \item{min_rate}{Numeric. The minimum growth rate when the combined volume reaches or exceeds the maximum, default is 0.02.}
 
 \item{maxvol}{Numeric. Default is 38. This value is used to calculate max volume before min growth using \code{\link{calculate_max_volume}}.}
+
+\item{harvest_mode}{Character. "percentage" (default) or "concentrated".}
+
+\item{removal}{Numeric. The fixed amount (cords/acre) to harvest in "concentrated" mode.}
 }
 \value{
 A list containing:
@@ -186,6 +192,7 @@ print(results_scenario_5)
 
 Other AAC Functions: 
 \code{\link{run_aac_for_all}()},
-\code{\link{run_aac_simulation}()}
+\code{\link{run_aac_simulation}()},
+\code{\link{run_system_simulation}()}
 }
 \concept{AAC Functions}
