@@ -134,7 +134,7 @@ run_system_simulation <- function(df,
   if (!is.infinite(max_harvest_acres) && max_harvest_acres > 0) {
 
     # Identify stands larger than the limit
-    large_indices <- which(sim_df$Acres*2 > max_harvest_acres)
+    large_indices <- which(sim_df$Acres > (0.4 * max_harvest_acres))
 
     if (length(large_indices) > 0) {
       was_split <- TRUE
@@ -149,16 +149,34 @@ run_system_simulation <- function(df,
         row <- large_stands[i, ]
         original_acres <- row$Acres
 
-        # How many pieces?
-        n_splits <- ceiling(original_acres*3 / max_harvest_acres)
-        new_acres <- original_acres / n_splits
+        # 1. Determine Ideal Target Size (25% of max budget)
+        target_piece_size <- min(max_harvest_acres, max(40, max_harvest_acres * 0.20))
 
-        # Replicate the row n_splits times
+        n_splits_ideal <- ceiling(original_acres / target_piece_size)
+
+        # 2. Apply Hard Floor (40 acres)
+        if (original_acres >= 40) {
+          max_splits_allowed <- floor(original_acres / 40)
+          n_splits <- min(n_splits_ideal, max_splits_allowed)
+          # Ensure we have at least 1 piece
+          n_splits <- max(1, n_splits)
+        } else {
+          # Stand is already < 40, cannot split further
+          n_splits <- 1
+        }
+
+        # If constraints result in no actual splitting, just keep the row
+        if(n_splits == 1) {
+          split_list[[i]] <- row
+          next
+        }
+
+        # 3. Perform the Split
+        new_acres <- original_acres / n_splits
         expanded <- row[rep(1, n_splits), ]
         expanded$Acres <- new_acres
 
-        # Rename matrix to ensure unique tracking (MatrixA -> MatrixA_part1, MatrixA_part2)
-        # We append a distinct suffix we can strip later
+        # Rename matrix to ensure unique tracking
         expanded$matrix <- paste0(expanded$matrix, "_part", 1:n_splits)
 
         split_list[[i]] <- expanded
@@ -222,6 +240,15 @@ run_system_simulation <- function(df,
     stand_indices <- if (!is.infinite(max_harvest_acres)) sample(n_stands) else 1:n_stands
     harvested_acres_this_year <- 0
     apply_max_harvest <- isTRUE(max_harvest) && yr == 1
+
+    if (yr == 1) {
+      cat(sprintf("\n=== YEAR 1 DEBUG ===\n"))
+      cat(sprintf("max_harvest parameter: %s (class: %s)\n", max_harvest, class(max_harvest)))
+      cat(sprintf("yr == 1: %s\n", yr == 1))
+      cat(sprintf("isTRUE(max_harvest): %s\n", isTRUE(max_harvest)))
+      cat(sprintf("apply_max_harvest: %s\n", apply_max_harvest))
+      cat(sprintf("====================\n\n"))
+    }
 
     for (i in stand_indices) {
       hw <- current_hw[i]

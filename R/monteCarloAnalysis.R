@@ -1,4 +1,4 @@
-#' Monte Carlo NPV Simulation with Exit Option for Terminal Year
+#' Monte Carlo NPV Simulation with Normal Distribution with Exit Option for Terminal Year
 #'
 #' This function performs Monte Carlo simulations to calculate Net Present Value (NPV) under uncertainty.
 #' It uses simpleNPV for regular cash flows, and either landExpectVal (for perpetual holding) or presentValue
@@ -66,7 +66,7 @@
 #'
 #' @export
 
-monteCarloAnalysis <- function(
+monteCarloAnalysis_norm <- function(
     Flow, Occurrence, NominalRate, TerminalYear, FutureValue, Exit = FALSE,
     NumSimulations = 5000, Seed = 123, SD_Flow = 0.2, SD_Discount = 0, SD_FutureValue = 0.2
 ) {
