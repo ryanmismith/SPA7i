@@ -207,19 +207,15 @@ calculate_aac <- function(township = 'T13R5',
   } else {
     # --- PERCENTAGE MODE (Original) ---
     if (isTRUE(max_harvest) && total_volume > min_stocking) {
-      if (township == "T9R11") cat("  >>> ENTERING MAX HARVEST BLOCK <<<\n")
       desired_total_aac <- total_volume + total_growth - min_stocking
       entry_made <- TRUE
     } else if (isTRUE(min_aac) && total_growth < 0.25 && total_volume >= min_stocking) {
-      if (township == "T9R11")
       desired_total_aac <- 0.5
       entry_made <- TRUE
     } else if (total_volume >= min_stocking) {
-      if (township == "T9R11")
       desired_total_aac <- aac_percentage * total_growth
       entry_made <- (desired_total_aac > 0)
     } else {
-      if (township == "T9R11")
       desired_total_aac <- 0
       entry_made <- FALSE
     }
