@@ -15,7 +15,7 @@ monteCarloAnalysis(
   SD_Flow = 0.2,
   SD_Discount = 0,
   sigma_infinity = 0.4,
-  lambda = 0.15
+  kappa = 0.15
 )
 }
 \arguments{
@@ -41,7 +41,7 @@ If \code{NULL}, defaults to Year 1 for all flows.}
 
 \item{sigma_infinity}{Numeric. (OU Only) Long-run volatility cap.}
 
-\item{lambda}{Numeric. (OU Only) Mean reversion speed.}
+\item{kappa}{Numeric. (OU Only) Mean reversion speed.}
 }
 \value{
 A list containing:
