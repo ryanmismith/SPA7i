@@ -21,16 +21,16 @@
 #' initially but caps at a maximum rather than growing unbounded.
 #'
 #' The mean-reverting volatility model is:
-#' \deqn{\sigma(t) = \sigma_{\infty} \times (1 - e^{-\lambda t})}
+#' \deqn{\sigma(t) = \sigma_{\infty} \times (1 - e^{-\kappa t})}
 #'
 #' where:
 #' \itemize{
 #'   \item \eqn{\sigma_{\infty}} = long-run maximum volatility (e.g., 40%)
-#'   \item \eqn{\lambda} = mean-reversion speed (typical: 0.10 to 0.30)
+#'   \item \eqn{\kappa} = mean-reversion speed (typical: 0.10 to 0.30)
 #'   \item \eqn{t} = forecast horizon in years
 #' }
 #'
-#' Example with \eqn{\sigma_{\infty} = 0.40} and \eqn{\lambda = 0.15}:
+#' Example with \eqn{\sigma_{\infty} = 0.40} and \eqn{\kappa = 0.15}:
 #' \itemize{
 #'   \item Year 1: \eqn{\sigma(1) = 0.40 \times (1 - e^{-0.15}) = 0.056} (5.6%)
 #'   \item Year 5: \eqn{\sigma(5) = 0.40 \times (1 - e^{-0.75}) = 0.211} (21.1%)
@@ -98,7 +98,7 @@
 #'   model OR base annual volatility for sqrt model (default: 0.40).
 #'   For mean-reversion: typical range 0.35 to 0.50.
 #'   For sqrt scaling: typical range 0.10 to 0.20.
-#' @param lambda Numeric mean-reversion speed (default: 0.15).
+#' @param kappa Numeric mean-reversion speed (default: 0.15).
 #'   Higher values mean faster approach to maximum. Typical range: 0.10 to 0.30.
 #'   Only used when \code{use_sqrt_time = FALSE}.
 #' @param use_sqrt_time Logical. If TRUE, use \eqn{\sqrt{t}} volatility scaling
@@ -132,7 +132,7 @@
 #'   Flow, Occurrence, NominalRate, TerminalYear, FutureValue,
 #'   Exit = TRUE,
 #'   sigma_infinity = 0.40,  # 40% maximum volatility
-#'   lambda = 0.15,          # Moderate mean-reversion
+#'   kappa = 0.15,          # Moderate mean-reversion
 #'   NumSimulations = 5000
 #' )
 #'
@@ -155,7 +155,7 @@
 #' ggplot(data.frame(NPV = result$NPVs), aes(x = NPV)) +
 #'   geom_histogram(bins = 50, fill = "steelblue", alpha = 0.7) +
 #'   labs(title = "NPV Distribution - Mean-Reverting Volatility",
-#'        subtitle = paste("sigma_infinity = 0.40, lambda = 0.15")) +
+#'        subtitle = paste("sigma_infinity = 0.40, kappa = 0.15")) +
 #'   theme_minimal()
 #' }
 #'
@@ -176,22 +176,22 @@
 #' #   20   0.671  (67.1% - very high)
 #' #   30   0.822  (82.2% - unrealistically high)
 #'
-#' # Example 3: Sensitivity to lambda (mean-reversion speed)
-#' # Fast mean-reversion (lambda = 0.30): Uncertainty peaks quickly
+#' # Example 3: Sensitivity to kappa (mean-reversion speed)
+#' # Fast mean-reversion (kappa = 0.30): Uncertainty peaks quickly
 #' result_fast <- monteCarloAnalysis(
 #'   Flow, Occurrence, NominalRate, TerminalYear, FutureValue,
-#'   Exit = TRUE, sigma_infinity = 0.40, lambda = 0.30
+#'   Exit = TRUE, sigma_infinity = 0.40, kappa = 0.30
 #' )
 #'
-#' # Slow mean-reversion (lambda = 0.10): Uncertainty grows gradually
+#' # Slow mean-reversion (kappa = 0.10): Uncertainty grows gradually
 #' result_slow <- monteCarloAnalysis(
 #'   Flow, Occurrence, NominalRate, TerminalYear, FutureValue,
-#'   Exit = TRUE, sigma_infinity = 0.40, lambda = 0.10
+#'   Exit = TRUE, sigma_infinity = 0.40, kappa = 0.10
 #' )
 #'
 #' # Compare year 10 volatility:
-#' result_fast$volatility_profile[3, ]  # lambda=0.30: sigma(10) ~ 38%
-#' result_slow$volatility_profile[3, ]  # lambda=0.10: sigma(10) ~ 25%
+#' result_fast$volatility_profile[3, ]  # kappa=0.30: sigma(10) ~ 38%
+#' result_slow$volatility_profile[3, ]  # kappa=0.10: sigma(10) ~ 25%
 #'
 #' # Example 4: Exit vs. Hold scenarios
 #' # Exit: Sell property at terminal year
@@ -216,7 +216,7 @@ monteCarloAnalysis_OU <- function(
     Flow, Occurrence, NominalRate, TerminalYear, FutureValue, Exit = FALSE,
     NumSimulations = 2000, Seed = 123,
     sigma_infinity = 0.40,    # 40% long-run volatility (industry standard)
-    lambda = 0.15,            # Mean reversion speed (industry standard)
+    kappa = 0.15,            # Mean reversion speed (industry standard)
     use_sqrt_time = FALSE,
     SD_Discount = 0,
     SD_FutureValue = 0.20
@@ -248,7 +248,7 @@ monteCarloAnalysis_OU <- function(
     } else {
       # Mean-reverting (Ornstein-Uhlenbeck) - INDUSTRY STANDARD
       # σ(t) = σ_∞ × (1 - e^(-λt))
-      sigma_t[i] <- sigma_infinity * (1 - exp(-lambda * t))
+      sigma_t[i] <- sigma_infinity * (1 - exp(-kappa * t))
     }
 
     # Cap volatility at 100% as safety (only relevant for sqrt_time with long horizons)

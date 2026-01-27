@@ -241,15 +241,6 @@ run_system_simulation <- function(df,
     harvested_acres_this_year <- 0
     apply_max_harvest <- isTRUE(max_harvest) && yr == 1
 
-    if (yr == 1) {
-      cat(sprintf("\n=== YEAR 1 DEBUG ===\n"))
-      cat(sprintf("max_harvest parameter: %s (class: %s)\n", max_harvest, class(max_harvest)))
-      cat(sprintf("yr == 1: %s\n", yr == 1))
-      cat(sprintf("isTRUE(max_harvest): %s\n", isTRUE(max_harvest)))
-      cat(sprintf("apply_max_harvest: %s\n", apply_max_harvest))
-      cat(sprintf("====================\n\n"))
-    }
-
     for (i in stand_indices) {
       hw <- current_hw[i]
       sw <- current_sw[i]

@@ -45,7 +45,7 @@
 #' @param SD_Flow Numeric. Volatility parameter (Annual Standard Deviation).
 #' @param SD_Discount Numeric. Standard deviation for the discount rate.
 #' @param sigma_infinity Numeric. (OU Only) Long-run volatility cap.
-#' @param lambda Numeric. (OU Only) Mean reversion speed.
+#' @param kappa Numeric. (OU Only) Mean reversion speed.
 #'
 #' @return A list containing:
 #' \describe{
@@ -92,7 +92,7 @@ monteCarloAnalysis <- function(
     SD_Flow = 0.20,
     SD_Discount = 0,
     sigma_infinity = 0.40,
-    lambda = 0.15
+    kappa = 0.15
 ) {
 
   # --- 1. HANDLE OCCURRENCE DEFAULTS ---
@@ -124,8 +124,8 @@ monteCarloAnalysis <- function(
   debug_flows <- NULL
 
   # Pre-calculate constants for OU
-  reversion_factor <- exp(-lambda)
-  ou_innovation <- sigma_infinity * sqrt(1 - exp(-2 * lambda))
+  reversion_factor <- exp(-kappa)
+  ou_innovation <- sigma_infinity * sqrt(1 - exp(-2 * kappa))
 
   # --- 5. SIMULATION LOOP ---
   for (sim in 1:NumSimulations) {
@@ -245,7 +245,7 @@ monteCarloAnalysis <- function(
     unique_years <- unique(Occurrence)
     variance_profile <- data.frame(
       Year = unique_years,
-      Sigma = round(sigma_infinity * sqrt(1 - exp(-2 * lambda * unique_years)), 4),
+      Sigma = round(sigma_infinity * sqrt(1 - exp(-2 * kappa * unique_years)), 4),
       Correction = round(0.5 * sigma_infinity^2, 4)  # Constant for OU
     )
   } else if (ProcessType == "walk") {
